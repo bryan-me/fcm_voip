@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:fcm_voip/services/auth_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -12,7 +13,7 @@ class AuthClient {
   final String tokenEndpointUrl = dotenv.env['TOKEN_ENDPOINT_URL'] ?? 'default_token_endpoint_url';
   final String logoutEndpointUrl = dotenv.env['LOGOUT_ENDPOINT_URL'] ?? 'default_logout_endpoint_url';
   final String clientId = dotenv.env['CLIENT_ID'] ?? 'default_client_id';
-
+AuthService authService = AuthService();
   Future<void> createClient(BuildContext context, String username, String password) async {
     final tokenEndpoint = Uri.parse(tokenEndpointUrl);
 
@@ -81,55 +82,65 @@ class AuthClient {
     );
   }
 
-  Future<void> logout(BuildContext context) async {
-    try {
-      final accessToken = await TokenManager.accessToken;
-      final refreshToken = await TokenManager.refreshToken;
+  // Future<void> logout(BuildContext context) async {
+  //   try {
+  //     final accessToken = await TokenManager.accessToken;
+  //     final refreshToken = await TokenManager.refreshToken;
 
-      if (accessToken != null && refreshToken != null) {
-        final logoutResponse = await http.get(Uri.parse(logoutEndpointUrl),
-            headers: {'Content-Type': 'application/x-www-form-urlencoded'});
+  //     if (accessToken != null && refreshToken != null) {
+  //       final logoutResponse = await http.get(Uri.parse(logoutEndpointUrl),
+  //           headers: {'Content-Type': 'application/x-www-form-urlencoded'});
 
-        if (logoutResponse.statusCode == 200) {
-          if (kDebugMode) {
-            print('Successfully logged out from Keycloak.');
-          }
+  //       if (logoutResponse.statusCode == 200) {
+  //         if (kDebugMode) {
+  //           print('Successfully logged out from Keycloak.');
+  //         }
 
-          TokenManager.clearTokens();
+  //         TokenManager.clearTokens();
 
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const Login()),
-          );
-        } else {
-          throw Exception('Failed to log out from Keycloak.');
-        }
-      } else {
-        throw Exception('No tokens found for logout.');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('Error during logout: $e');
-      }
+  //         Navigator.pushReplacement(
+  //           context,
+  //           MaterialPageRoute(builder: (context) => const Login()),
+  //         );
+  //       } else {
+  //         throw Exception('Failed to log out from Keycloak.');
+  //       }
+  //     } else {
+  //       throw Exception('No tokens found for logout.');
+  //     }
+  //   } catch (e) {
+  //     if (kDebugMode) {
+  //       print('Error during logout: $e');
+  //     }
 
-      // Show error alert to the user
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text('Logout Failed'),
-            content: const Text('An error occurred during logout.'),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-                child: const Text('OK'),
-              ),
-            ],
-          );
-        },
+  //     // Show error alert to the user
+  //     showDialog(
+  //       context: context,
+  //       builder: (BuildContext context) {
+  //         return AlertDialog(
+  //           title: const Text('Logout Failed'),
+  //           content: const Text('An error occurred during logout.'),
+  //           actions: [
+  //             TextButton(
+  //               onPressed: () {
+  //                 Navigator.of(context).pop();
+  //               },
+  //               child: const Text('OK'),
+  //             ),
+  //           ],
+  //         );
+  //       },
+  //     );
+  //   }
+  // }
+
+   Future<void> logout(BuildContext context) async {
+      //user ID or token is needed for the clearSession method
+      final userId = await authService.getUserId(); // Fetch userId or token from AuthService
+
+      await authService.clearSession(userId!); // Pass the userId or required argument
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const Login()),
       );
     }
-  }
 }

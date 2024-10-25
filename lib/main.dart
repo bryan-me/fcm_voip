@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:fcm_voip/ui/landing_page.dart';
+import 'package:fcm_voip/ui/login/auth.dart';
 import 'package:fcm_voip/utilities/resources/values/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -24,6 +24,8 @@ void main() async {
   HttpOverrides.global = ApplicationHttpOverrides();
   await Hive.initFlutter();
   await dotenv.load(fileName: ".env");
+  await Hive.openBox('authBox');
+  await Hive.openBox('forms');
   HttpOverrides.global = ApplicationHttpOverrides();
 
   // Hive.registerAdapter(FormModelAdapter());
@@ -60,7 +62,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'FCM VOIP',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         scaffoldBackgroundColor: AppColors.backgroundColor,
@@ -70,7 +72,7 @@ class MyApp extends StatelessWidget {
                     AppColors.createMaterialColor(AppColors.primaryColor))
             .copyWith(secondary: AppColors.accentColor),
       ),
-      home: LandingPage(title: 'STL Notification Demo'),
+      home: const AuthScreen(),
     );
   }
 }

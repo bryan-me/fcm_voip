@@ -61,16 +61,16 @@ class _LandingPageState extends State<LandingPage> {
                       builder: (context) => const Login()), // Navigate to Login page
                 );
               },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color.fromARGB(255, 251, 164, 38),
+                minimumSize: const Size(double.infinity, 50), // Full width
+              ),
               child: const Text(
                 'Login',
                 style: TextStyle(
                   color: Colors.white, // Text color
                   fontWeight: FontWeight.bold, // Bold text
                 ),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color.fromARGB(255, 251, 164, 38),
-                minimumSize: const Size(double.infinity, 50), // Full width
               ),
             ),
           ),

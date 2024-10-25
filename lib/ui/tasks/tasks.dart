@@ -1,5 +1,12 @@
-import 'package:flutter/foundation.dart';
+import 'dart:convert';
+
+import 'package:fcm_voip/services/auth_service.dart';
+import 'package:fcm_voip/services/form_response.dart';
+import 'package:fcm_voip/utilities/form.dart';
+import 'package:fcm_voip/utilities/note_card.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:http/http.dart' as http;
 
 class TasksScreen extends StatefulWidget {
   const TasksScreen({super.key});
@@ -9,180 +16,144 @@ class TasksScreen extends StatefulWidget {
 }
 
 class _TasksScreenState extends State<TasksScreen> {
+  Future<FormResponse>? _formsResponse;
+
+  @override
+  void initState() {
+    super.initState();
+    _formsResponse = fetchForms();
+
+    //check that the form retrived from the database is being saved in hive
+    // checkHiveData();
+  }
+
+  Future<FormResponse> fetchForms() async {
+    final authService = AuthService();
+    String? userId = await authService.getUserId();
+
+    if (userId == null) {
+      throw Exception('User not authenticated');
+    }
+
+    final token = await authService.getToken(userId);
+    if (token == null) {
+      throw Exception('Not authenticated');
+    }
+
+    // Make the API call directly to fetch forms
+    final String endpoint = '${dotenv.env['FIND_ALL_FORMS']}';
+    
+    final response = await http.get(
+      Uri.parse(endpoint),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    print('Response status: ${response.statusCode}');
+    print('Response body: ${response.body}'); // Log the response body
+
+    if (response.statusCode == 200) {
+      final jsonResponse = json.decode(response.body);
+      if (jsonResponse is Map<String, dynamic> &&
+          jsonResponse['data'] is List) {
+        return FormResponse.fromJson(jsonResponse);
+      } else {
+        throw Exception('Invalid response format');
+      }
+    } else {
+      print('Failed to load forms: ${response.statusCode}');
+      print('Response body: ${response.body}');
+      throw Exception('Failed to load forms: ${response.statusCode}');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100],
-      appBar: AppBar(
-        title: const Text('Tasks', style: TextStyle(color: Colors.black)),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: true,
-        leading: const Padding(
-          padding: EdgeInsets.all(8.0),
-          child: CircleAvatar(
-            backgroundImage: AssetImage('assets/images/fcm_logo.png'),
-          ),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.filter_list, color: Colors.black),
-            onPressed: () {},
-          ),
-        ],
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              '3 Tasks',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        backgroundColor: Colors.grey[100],
+        appBar: AppBar(
+          title: const Text('Tasks', style: TextStyle(color: Colors.black)),
+          backgroundColor: Colors.white,
+          elevation: 0,
+          centerTitle: true,
+          leading: const Padding(
+            padding: EdgeInsets.all(8.0),
+            child: CircleAvatar(
+              backgroundImage: AssetImage('assets/images/fcm_logo.png'),
             ),
-            const SizedBox(height: 16),
-            Expanded(
-              child: ListView(
-                children: [
-                  buildNoteCard(
-                    title: "123456",
-                    color: Colors.blue.shade100,
-                    icon: Icons.work_outline, 
-                    region: 'Greater Accra',
-                     branchName: 'Accra Regional HQ', 
-                     customer: 'GCB', 
-                     siteId: '9733723',
-                    dateAssigned: '14-09-2024', 
-                    dateReceived: '10-10-2024',
-                  ),
-                  buildNoteCard(
-                    title: "654321",
-                    color: Colors.yellow.shade100,
-                    icon: Icons.design_services_outlined,
-                    region: 'Ashanti Region',
-                    branchName: 'Kumasi', 
-                     customer: 'Rent Control', 
-                     siteId: '8362739',
-                    dateAssigned: '14-09-2024', 
-                    dateReceived: '10-10-2024',
-                  ),
-                  buildNoteCard(
-                    title: "321456",
-                    color: Colors.purple.shade100,
-                    icon: Icons.task_alt_outlined,
-                    region: 'Central Region',
-                    branchName: 'Ayensu', 
-                     customer: 'NHIA', 
-                     siteId: '1246278',
-                    dateAssigned: '14-09-2024', 
-                    dateReceived: '10-10-2024',
-                  ),
-                ],
-              ),
+          ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.filter_list, color: Colors.black),
+              onPressed: () {},
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget buildNoteCard({
-    required String title,
-    required String region,
-    required String branchName,
-    required String customer,
-    required String siteId,
-    required String dateAssigned,
-    required String dateReceived,
-    required Color color,
-    required IconData icon,
-  }) {
-    return Card(
-      color: color,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      elevation: 2,
-      margin: const EdgeInsets.only(bottom: 16),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
+        body: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              FutureBuilder<FormResponse>(
+                future: _formsResponse,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  } else if (snapshot.hasError) {
+                    return Center(child: Text('Error: ${snapshot.error}'));
+                  } else if (snapshot.hasData) {
+                    int formCount = snapshot.data!.data.length;
+                    return Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '$formCount Task${formCount == 1 ? '' : 's'}',
+                            style: const TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 16),
+                          Expanded(
+                            child: ListView.builder(
+                              itemCount: formCount,
+                              itemBuilder: (context, index) {
+                                final form = snapshot.data!.data[index];
+                                return GestureDetector(
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            FormBuild(formId: form.id),
+                                      ),
+                                    );
+                                  },
+                                   child: NoteCard(
+                                    title: form.name ?? 'Title',
+                                    region: form.region ?? 'Unknown region',
+                                    branchName:
+                                        form.branchName ?? 'Unknown branch',
+                                    customer:
+                                        form.customer ?? 'Unknown customer',
+                                    siteId: form.name ?? 'N/A',
+                                    dateAssigned: form.dateAssigned ?? 'N/A',
+                                    dateReceived: form.dateReceived ?? 'N/A',
+                                     color: Colors.green.shade100,
+                                    icon: Icons.task,
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  } else {
+                    return const Center(child: Text('No Form Found Currently'));
+                  }
+                },
               ),
-              child: Icon(icon, size: 32, color: Colors.black),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
-                  const SizedBox(height: 8),
-                  // Text(
-                  //   description,
-                  //   style: const TextStyle(color: Colors.black54, fontSize: 14),
-                  //   maxLines: 2,
-                  //   overflow: TextOverflow.ellipsis,
-                  // ),
-                  const SizedBox(height: 8),
-                  Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            region,
-                            style: const TextStyle(color: Colors.black45),
-                          ),
-                          Text(
-                            branchName,
-                            style: const TextStyle(color: Colors.black45),
-                          ),
-                        ],
-                      ),
-
-                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            customer,
-                            style: const TextStyle(color: Colors.black45),
-                          ),
-                          Text(
-                            siteId,
-                            style: const TextStyle(color: Colors.black45),
-                          ),
-                        ],
-                      ),
-
-                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            dateAssigned,
-                            style: const TextStyle(color: Colors.black45),
-                          ),
-                          Text(
-                            dateReceived,
-                            style: const TextStyle(color: Colors.black45),
-                          ),
-                        ],
-                      ),
-                    ],
-                  )
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+            ],
+          ),
+        ));
   }
 }

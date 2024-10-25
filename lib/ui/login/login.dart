@@ -1,119 +1,138 @@
-import 'package:fcm_voip/main.dart';
-import 'package:fcm_voip/utilities/auth_client.dart';
+import 'dart:convert';
+import 'package:fcm_voip/services/auth_service.dart';
 import 'package:fcm_voip/utilities/activity_main.dart';
-import 'package:fcm_voip/utilities/network.dart';
-import 'package:fcm_voip/utilities/token_manager.dart';
-import 'package:flutter/foundation.dart';
+// import 'package:fcm_voip/ui/landing_page.dart';
 import 'package:flutter/material.dart';
+// import 'package:flutter_keycloak/screens/main_screen.dart';
+// import 'package:flutter_keycloak/service/auth_service.dart';
+import 'package:http/http.dart' as http;
+import 'package:jwt_decode/jwt_decode.dart';
 
 class Login extends StatefulWidget {
   const Login({super.key});
 
   @override
-  State<Login> createState() => _LoginState();
+  _LoginState createState() => _LoginState();
 }
 
 class _LoginState extends State<Login> {
+  final AuthService _authService = AuthService();
+bool _isLoading = false;
+  // Using TextEditingController for better state management
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final AuthClient _authClient = AuthClient();
-  final Network _network = Network();
-  bool _isLoading = false;
-  // final UpdateService _updateService = UpdateService();
 
-  @override
-  void initState() {
-    super.initState();
-    // _updateService.initUpdateChecker(context);
+  Future<void> _login() async {
+    try {
+      // Attempt to create a client and retrieve tokens
+      final tokenExchangeStatus = await createClient();
 
-    // if (Platform.isAndroid) WebView.platform = SurfaceAndroidWebView();
-
-    _loadSavedCredentials();
-  }
-
-  @override
-  void dispose() {
-    // _updateService.dispose();
-    super.dispose();
-  }
-
-  Future<void> _loadSavedCredentials() async {
-    final credentials = await retrieveCredentials();
-    if (credentials['username'] != null && credentials['password'] != null) {
-      _usernameController.text = credentials['username']!;
-      _passwordController.text = credentials['password']!;
-    }
-  }
-
-  Future<void> storeCredentials(String username, String password) async {
-    await secureStorage.write(key: 'username', value: username);
-    await secureStorage.write(key: 'password', value: password);
-  }
-
-  Future<Map<String, String?>> retrieveCredentials() async {
-    String? username = await secureStorage.read(key: 'username');
-    String? password = await secureStorage.read(key: 'password');
-    return {'username': username, 'password': password};
-  }
-
-  Future<void> login() async {
-    setState(() {
-      _isLoading = true;
-    });
-
-    if (await _network.isConnectedToNetwork()) {
-      await Future.delayed(const Duration(milliseconds: 500));
-      // Online login
-      try {
-        final username = _usernameController.text;
-        final password = _passwordController.text;
-        // ignore: use_build_context_synchronously
-        await _authClient.createClient(context, username, password);
-      } catch (e) {
-        if (kDebugMode) {
-          print('Error during login: $e');
-        }
-      }
-    } else {
-      // Offline login
-      final credentials = await retrieveCredentials();
-      if (credentials['username'] == _usernameController.text &&
-          credentials['password'] == _passwordController.text) {
-        // Allow offline access
-        final lastAccessToken = await secureStorage.read(key: 'access_token');
-        final lastRefreshToken = await secureStorage.read(key: 'refresh_token');
-        final lastSub = await secureStorage.read(key: 'sub');
-
-        if (lastAccessToken != null &&
-            lastRefreshToken != null &&
-            lastSub != null) {
-          setState(() {
-            TokenManager.setTokens(lastAccessToken, lastRefreshToken, lastSub);
-          });
-
-          Navigator.push(
-            // ignore: use_build_context_synchronously
-            context,
-            MaterialPageRoute(
-                builder: (context) => CustomBottomNavigationBar()),
-          );
-        } else {
-          if (kDebugMode) {
-            print('No valid tokens available for offline use');
-          }
-        }
+      if (tokenExchangeStatus == 200) {
+        // Navigate to the main screen after successful login
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => CustomBottomNavigationBar()),
+        );
       } else {
-        if (kDebugMode) {
-          print('No stored credentials or invalid credentials');
-        }
+        // Handle failed login attempt
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Username or Password incorrect. Please try again.')),
+        );
       }
+    } catch (e) {
+      // Display error message in case of an exception
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
     }
-    setState(() {
-      _isLoading = false;
-    });
   }
 
-  @override
+  // Future<int> createClient() async {
+  //   final tokenEndpoint = Uri.parse(
+  //       'http://192.168.250.209:8070/auth/realms/FCM_VoIP/protocol/openid-connect/token');
+  //   const clientId = 'mobile_client';
+  //   final username = _usernameController.text;
+  //   final password = _passwordController.text;
+
+  Future<int> createClient() async {
+    final tokenEndpoint = Uri.parse(
+        'http://192.168.250.209:8070/auth/realms/Push/protocol/openid-connect/token');
+    const clientId = 'frontend';
+    final username = _usernameController.text;
+    final password = _passwordController.text;
+
+    try {
+      final tokenResponse = await http.post(
+        tokenEndpoint,
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: {
+          'grant_type': 'password',
+          'client_id': clientId,
+          'username': username,
+          'password': password,
+        },
+      );
+
+      if (tokenResponse.statusCode == 200) {
+        final jsonResponse = json.decode(tokenResponse.body);
+        final accessToken = jsonResponse['access_token'];
+        final refreshToken = jsonResponse['refresh_token'];
+
+        // Decode the access token to get the user ID (subject claim 'sub')
+        Map<String, dynamic> payload = Jwt.parseJwt(accessToken);
+        final userId = payload['sub']; // Extract the user ID
+
+        // Store tokens and user ID securely
+        await _authService.storeToken(userId, username, accessToken, refreshToken);
+
+        // Store the hashed password with the user ID
+        await _authService.storeHashedPassword(userId, password);  // Pass password correctly here
+      } else {
+        print(
+            'Failed to obtain access token. Status code: ${tokenResponse.statusCode}');
+        return tokenResponse.statusCode;
+      }
+    } catch (e) {
+      print('Error during token exchange: $e');
+      throw Exception('Failed to obtain access token');
+    }
+
+    return 200;
+  }
+
+  Future<void> _forgotPassword() async {
+    if (_usernameController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter your username or email')),
+      );
+      return;
+    }
+
+    final forgotPasswordUrl = Uri.parse(
+        'http://10.0.2.2:8080/realms/Push/login-actions/reset-credentials?client_id=push-messenger&username=${_usernameController.text}');
+
+    try {
+      final response = await http.get(forgotPasswordUrl);
+
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Password reset link sent to your email')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content:
+                  Text('Failed to send reset link: ${response.statusCode}')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Error sending reset link')),
+      );
+    }
+  }
+
+    @override
   Widget build(BuildContext context) {
     return Scaffold(
       resizeToAvoidBottomInset: false,
@@ -189,7 +208,7 @@ class _LoginState extends State<Login> {
                             const SizedBox(height: 50),
                             ElevatedButton(
                               key: const Key('loginButton'),
-                              onPressed: login,
+                              onPressed: _login,
                               style: ElevatedButton.styleFrom(
                                 shape: const StadiumBorder(),
                                 padding:

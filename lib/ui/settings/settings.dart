@@ -1,9 +1,13 @@
+import 'package:fcm_voip/services/anydesk_service.dart';
 import 'package:fcm_voip/utilities/auth_client.dart';
 import 'package:fcm_voip/utilities/resources/values/colors.dart';
 import 'package:flutter/material.dart';
 
 class SettingsScreen extends StatelessWidget {
   final AuthClient _authClient = AuthClient();
+  final AnyDeskService _anyDeskService = AnyDeskService();
+
+  SettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -149,7 +153,7 @@ class SettingsScreen extends StatelessWidget {
                    size: 15.3
                    ),
               onTap: () {
-                
+                _anyDeskService.openAnyDesk();
               },
             ),
             const Padding(
@@ -180,9 +184,9 @@ class SettingsScreen extends StatelessWidget {
   }
 }
 
-void main() {
-  runApp(MaterialApp(
-    home: SettingsScreen(),
-    theme: ThemeData.dark(), 
-  ));
-}
+// void main() {
+//   runApp(MaterialApp(
+//     home: SettingsScreen(),
+//     theme: ThemeData.dark(), 
+//   ));
+// }
