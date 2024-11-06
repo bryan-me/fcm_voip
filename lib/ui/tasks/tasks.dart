@@ -4,6 +4,7 @@ import 'package:fcm_voip/services/auth_service.dart';
 import 'package:fcm_voip/services/form_response.dart';
 import 'package:fcm_voip/utilities/form.dart';
 import 'package:fcm_voip/utilities/note_card.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
@@ -29,15 +30,16 @@ class _TasksScreenState extends State<TasksScreen> {
 
   Future<FormResponse> fetchForms() async {
     final authService = AuthService();
-    String? userId = await authService.getUserId();
+  String? userId = await authService.getCurrentUserId(); // Fetch current user ID
+    print(userId);
 
     if (userId == null) {
-      throw Exception('User not authenticated');
+      throw Exception('User not authenticated. Please Re-Login.');
     }
 
     final token = await authService.getToken(userId);
     if (token == null) {
-      throw Exception('Not authenticated');
+      throw Exception('Not authenticated, Please Re-Login.');
     }
 
     // Make the API call directly to fetch forms
@@ -48,8 +50,12 @@ class _TasksScreenState extends State<TasksScreen> {
       headers: {'Authorization': 'Bearer $token'},
     );
 
-    print('Response status: ${response.statusCode}');
-    print('Response body: ${response.body}'); // Log the response body
+    if (kDebugMode) {
+      print('Response status: ${response.statusCode}');
+    }
+    if (kDebugMode) {
+      print('Response body: ${response.body}');
+    } // Log the response body
 
     if (response.statusCode == 200) {
       final jsonResponse = json.decode(response.body);
@@ -60,8 +66,12 @@ class _TasksScreenState extends State<TasksScreen> {
         throw Exception('Invalid response format');
       }
     } else {
-      print('Failed to load forms: ${response.statusCode}');
-      print('Response body: ${response.body}');
+      if (kDebugMode) {
+        print('Failed to load forms: ${response.statusCode}');
+      }
+      if (kDebugMode) {
+        print('Response body: ${response.body}');
+      }
       throw Exception('Failed to load forms: ${response.statusCode}');
     }
   }
@@ -92,6 +102,7 @@ class _TasksScreenState extends State<TasksScreen> {
           padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               FutureBuilder<FormResponse>(
                 future: _formsResponse,
@@ -99,7 +110,10 @@ class _TasksScreenState extends State<TasksScreen> {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
                   } else if (snapshot.hasError) {
-                    return Center(child: Text('Error: ${snapshot.error}'));
+                    return const Center(child: 
+                    // Text('Error: ${snapshot.error}')
+                    Text('There\'s an error with your network. Please check and try again.')
+                    );
                   } else if (snapshot.hasData) {
                     int formCount = snapshot.data!.data.length;
                     return Expanded(

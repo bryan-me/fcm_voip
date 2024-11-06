@@ -50,7 +50,7 @@ class _FormBuildState extends State<FormBuild> {
   }
 
   Future<http.Response> _fetchFromApi(String formId) async {
-    String? userId = await authService.getUserId();
+    String? userId = await authService.getCurrentUserId();
     if (userId == null) {
       throw Exception('User not authenticated');
     }
@@ -127,7 +127,7 @@ class _FormBuildState extends State<FormBuild> {
             alignment: Alignment.centerLeft, // Align text to the left
             child: Text(
               field.fieldLabel,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 18.0, // Increase the font size
                 fontWeight: FontWeight.bold, // Optional: Make the text bold
               ),
@@ -148,7 +148,7 @@ class _FormBuildState extends State<FormBuild> {
               readOnly: true,
               decoration: InputDecoration(
                 hintText: field.placeholder,
-                suffixIcon: Icon(Icons.calendar_today),
+                suffixIcon: const Icon(Icons.calendar_today),
               ),
               onTap: () async {
                 DateTime? selectedDate = await showDatePicker(
@@ -246,7 +246,7 @@ class _FormBuildState extends State<FormBuild> {
             children: [
               TextFormField(
                 controller: _longitudeController,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   labelText: 'Longitude',
                 ),
                 keyboardType: TextInputType.number,
@@ -259,7 +259,7 @@ class _FormBuildState extends State<FormBuild> {
               ),
               TextFormField(
                 controller: _latitudeController,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   labelText: 'Latitude',
                 ),
                 keyboardType: TextInputType.number,
@@ -272,7 +272,7 @@ class _FormBuildState extends State<FormBuild> {
               ),
               ElevatedButton(
                 onPressed: _getCurrentLocation,
-                child: Text('Get Current Location'),
+                child: const Text('Get Current Location'),
               ),
             ],
           ));
@@ -303,14 +303,14 @@ class _FormBuildState extends State<FormBuild> {
                         signatureController.clear();
                       });
                     },
-                    child: Text('Clear'),
+                    child: const Text('Clear'),
                   ),
                   ElevatedButton(
                     onPressed: () async {
                       // Save or handle the signature
                       _saveFormData(widget.formId);
                     },
-                    child: Text('Save'),
+                    child: const Text('Save'),
                   ),
                 ],
               ),
@@ -321,11 +321,11 @@ class _FormBuildState extends State<FormBuild> {
           formFields.add(Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Take Pictures (at least 3, up to 6)'),
+              const Text('Take Pictures (at least 3, up to 6)'),
               GridView.builder(
                 shrinkWrap: true,
                 itemCount: 6,
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 3,
                 ),
                 itemBuilder: (context, index) {
@@ -341,10 +341,10 @@ class _FormBuildState extends State<FormBuild> {
                       _saveFormData(widget.formId);
                     },
                     child: Container(
-                      margin: EdgeInsets.all(4.0),
+                      margin: const EdgeInsets.all(4.0),
                       color: Colors.grey[300],
                       child: _images[index] == null
-                          ? Icon(Icons.camera_alt)
+                          ? const Icon(Icons.camera_alt)
                           : Image.file(File(_images[index]!.path)),
                     ),
                   );
@@ -364,7 +364,7 @@ class _FormBuildState extends State<FormBuild> {
         onPressed: () {
           _submitForm();
         },
-        child: Text('Submit'),
+        child: const Text('Submit'),
       ),
     );
 
@@ -631,7 +631,7 @@ class _FormBuildState extends State<FormBuild> {
       }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please fill in all required fields.')),
+        const SnackBar(content: Text('Please fill in all required fields.')),
       );
     }
   }

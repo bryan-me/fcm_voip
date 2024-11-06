@@ -136,9 +136,12 @@ AuthService authService = AuthService();
 
    Future<void> logout(BuildContext context) async {
       //user ID or token is needed for the clearSession method
-      final userId = await authService.getUserId(); // Fetch userId or token from AuthService
+      // final userId = await authService.getUserId(); // Fetch userId or token from AuthService
+  String? userId = await authService.getCurrentUserId(); // Fetch current user ID
+
 
       await authService.clearSession(userId!); // Pass the userId or required argument
+      print("Signing out from: $userId account");
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (context) => const Login()),
       );

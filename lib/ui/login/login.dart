@@ -30,7 +30,7 @@ bool _isLoading = false;
       if (tokenExchangeStatus == 200) {
         // Navigate to the main screen after successful login
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => CustomBottomNavigationBar()),
+          MaterialPageRoute(builder: (context) => const CustomBottomNavigationBar()),
         );
       } else {
         // Handle failed login attempt
@@ -77,12 +77,17 @@ bool _isLoading = false;
         final accessToken = jsonResponse['access_token'];
         final refreshToken = jsonResponse['refresh_token'];
 
+        
+
         // Decode the access token to get the user ID (subject claim 'sub')
         Map<String, dynamic> payload = Jwt.parseJwt(accessToken);
         final userId = payload['sub']; // Extract the user ID
-
+        final name = payload['name'];
+        final email = payload['email'];
+        
+        print(payload);
         // Store tokens and user ID securely
-        await _authService.storeToken(userId, username, accessToken, refreshToken);
+        await _authService.storeToken(userId, username, name, email, accessToken, refreshToken);
 
         // Store the hashed password with the user ID
         await _authService.storeHashedPassword(userId, password);  // Pass password correctly here
@@ -132,106 +137,130 @@ bool _isLoading = false;
     }
   }
 
-    @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      resizeToAvoidBottomInset: false,
-      backgroundColor: const Color.fromARGB(255, 56, 71, 96),
-      body: Center(
-        child: _isLoading // Show loading wheel while logging in
-            ? const CircularProgressIndicator()
-            : Column(
+  @override
+Widget build(BuildContext context) {
+  return Scaffold(
+    resizeToAvoidBottomInset: false,
+    backgroundColor: const Color.fromARGB(255, 56, 71, 96),
+    body: Center(
+      child: _isLoading
+          ? const CircularProgressIndicator()
+          : SingleChildScrollView(
+              child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Image.asset(
                     'assets/images/fcm_logo.png',
+                    height: 120,
+                    width: 120,
                   ),
-                  Center(
-                    child: Card(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(18),
-                      ),
-                      elevation: 20,
-                      margin: const EdgeInsets.symmetric(horizontal: 24),
-                      color: Color.fromARGB(255, 50, 63, 86),
-                      child: Padding(
-                        padding: const EdgeInsets.all(24),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          mainAxisSize: MainAxisSize.min,
-                          children: <Widget>[
-                            // Check internet status
-                            // InternetStatusWidget(),
-                            // Text(
-                            //   'Login',
-                            //   style: TextStyle(
-                            //     fontSize: 24,
-                            //     fontWeight: FontWeight.bold,
-                            //     color: Colors.black,
-                            //   ),
-                            //   textAlign: TextAlign.center,
-                            // ),
-                            const SizedBox(
-                              height: 40,
+                  const SizedBox(height: 24),
+                  const Text(
+                    "Welcome Back!",
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    "Please sign in to continue",
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey[300],
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  Card(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    elevation: 8,
+                    margin: const EdgeInsets.symmetric(horizontal: 24),
+                    color: const Color.fromARGB(255, 50, 63, 86),
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          const SizedBox(height: 24),
+                          TextField(
+                            key: const Key('usernameField'),
+                            controller: _usernameController,
+                            decoration: InputDecoration(
+                              hintText: "Username",
+                              hintStyle: TextStyle(color: Colors.grey[600]),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(18),
+                                borderSide: BorderSide.none,
+                              ),
+                              fillColor: Colors.grey[850],
+                              filled: true,
+                              prefixIcon: const Icon(Icons.person, color: Colors.white70),
                             ),
-                            TextField(
-                              key: const Key('usernameField'),
-                              controller: _usernameController,
-                              decoration: InputDecoration(
-                                hintText: "Username",
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(18),
-                                  borderSide: BorderSide.none,
-                                ),
-                                fillColor: Colors.white,
-                                filled: true,
-                                prefixIcon: const Icon(Icons.person),
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                          const SizedBox(height: 24),
+                          TextField(
+                            key: const Key('passwordField'),
+                            controller: _passwordController,
+                            decoration: InputDecoration(
+                              hintText: "Password",
+                              hintStyle: TextStyle(color: Colors.grey[600]),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(18),
+                                borderSide: BorderSide.none,
+                              ),
+                              fillColor: Colors.grey[850],
+                              filled: true,
+                              prefixIcon: const Icon(Icons.lock, color: Colors.white70),
+                            ),
+                            obscureText: true,
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                          const SizedBox(height: 32),
+                          ElevatedButton(
+                            key: const Key('loginButton'),
+                            onPressed: _login,
+                            style: ElevatedButton.styleFrom(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(30),
+                              ),
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              backgroundColor: const Color.fromARGB(255, 251, 164, 38),
+                            ),
+                            child: const Text(
+                              'LOGIN',
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
-                            const SizedBox(height: 40),
-                            TextField(
-                              key: const Key('passwordField'),
-                              controller: _passwordController,
-                              decoration: InputDecoration(
-                                hintText: "Password",
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(18),
-                                  borderSide: BorderSide.none,
-                                ),
-                                fillColor: Colors.white,
-                                filled: true,
-                                prefixIcon: const Icon(Icons.lock),
-                              ),
-                              obscureText: true,
-                            ),
-                            const SizedBox(height: 50),
-                            ElevatedButton(
-                              key: const Key('loginButton'),
-                              onPressed: _login,
-                              style: ElevatedButton.styleFrom(
-                                shape: const StadiumBorder(),
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 16),
-                                backgroundColor:
-                                    const Color.fromARGB(255, 251, 164, 38),
-                              ),
-                              child: const Text(
-                                'LOGIN',
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ),
-                  )
+                  ),
+                  const SizedBox(height: 24),
+                  TextButton(
+                    onPressed: () {
+                      // Add your 'Forgot password?' navigation logic here
+                    },
+                    child: Text(
+                      'Forgot password?',
+                      style: TextStyle(
+                        color: Colors.grey[300],
+                      ),
+                    ),
+                  ),
                 ],
               ),
-      ),
-    );
-  }
+            ),
+    ),
+  );
+}
 }

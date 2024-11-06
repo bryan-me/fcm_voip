@@ -8,12 +8,36 @@ class AuthService {
   final _authBox = Hive.box('authBox');
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
 
-  Future<void> storeToken(String userId, String username, String accessToken, String refreshToken) async {
+  // Store tokens and username for a specific user and save the last authenticated user ID
+  Future<void> storeToken(String userId, String username, String name, String email, String accessToken, String refreshToken) async {
     await _authBox.put('${userId}_accessToken', accessToken);
     await _authBox.put('${userId}_refreshToken', refreshToken);
     await _authBox.put('${userId}_username', username);
+    await _authBox.put('${userId}_name', name);
+    await _authBox.put('${userId}_email', email);
+      await setCurrentUserId(userId);
+
+   }
+
+// Get name 
+Future<String?> getName(String userId) async {
+  return _authBox.get('${userId}_name');
+}
+
+// Get email  
+Future<String?> getEmail(String userId) async {
+  return _authBox.get('${userId}_email');
+}
+
+ // Set the current user ID
+  Future<void> setCurrentUserId(String userId) async {
+    await _authBox.put('currentUserId', userId);
   }
 
+  // Get the current user ID
+  Future<String?> getCurrentUserId() async {
+    return _authBox.get('currentUserId');
+  }
   // Hash and store the password associated with the user ID
   Future<void> storeHashedPassword(String userId, String password) async {
     var bytes = utf8.encode(password); // Convert the password to bytes
@@ -21,36 +45,29 @@ class AuthService {
     await _authBox.put('${userId}_hashedPassword', hashedPassword.toString());
   }
 
+  // Get token for the specified user and refresh if expired
   Future<String?> getToken(String userId) async {
-    return _authBox.get('${userId}_accessToken');
+    String? token = _authBox.get('${userId}_accessToken');
+    if (token != null && isTokenExpired(token)) {
+      // Refresh the token if it has expired
+      token = await getRefreshToken(userId);
+    }
+    return token;
   }
 
-//   Future<String?> getToken(String userId) async {
-//   String? token = _authBox.get('${userId}_accessToken');
-
-//   // Check if token is expired
-//   if (token != null && isTokenExpired(token)) {
-//     // If the token is expired, refresh it
-//     token = await getRefreshToken(userId);
-//   }
-
-//   return token;
-// }
-
+  // Check if token is expired
   bool isTokenExpired(String token) {
-  // Decode and check token expiration
-  // This is just a sample; implement according to your JWT library
-  final decodedToken = JwtDecoder.decode(token);
-  final expiryDate = DateTime.fromMillisecondsSinceEpoch(decodedToken['exp'] * 1000);
-  return DateTime.now().isAfter(expiryDate);
-}
+    final decodedToken = JwtDecoder.decode(token);
+    final expiryDate = DateTime.fromMillisecondsSinceEpoch(decodedToken['exp'] * 1000);
+    return DateTime.now().isAfter(expiryDate);
+  }
 
-Future<String?> getUsername(String userId) async {
-  return _authBox.get('${userId}_username');
-}
+  Future<String?> getUsername(String userId) async {
+    return _authBox.get('${userId}_username');
+  }
 
   Future<String?> getRefreshToken(String userId) async {
-    return _authBox.get('userId_refreshToken');
+    return _authBox.get('${userId}_refreshToken');
   }
 
   // Retrieve the hashed password associated with the user ID
@@ -76,32 +93,21 @@ Future<String?> getUsername(String userId) async {
 
   // Retrieve userId from Hive based on stored token or any other key
   Future<String?> getUserId() async {
-    // Assuming the userId is part of the keys stored, you can extract it
-    // For example, if you store 'userId_accessToken', you can fetch it this way:
     var userIdKey = _authBox.keys.firstWhere((key) => key.endsWith('_accessToken'), orElse: () => null);
-    
     if (userIdKey != null) {
-      // Extract the userId from the key (userId_accessToken format)
-      return userIdKey.split('_')[0]; 
+      return userIdKey.split('_')[0];
     }
-    
     return null; // Return null if no userId is found
   }
-  // List all users stored in Hive
-  // List getAllUsers() {
-  //   return _authBox.keys
-  //       .where((key) => key.endsWith('_hashedPassword')) // Filter to find all user IDs
-  //       .map((key) => key.split('_')[0]) // Extract user IDs
-  //       .toList();
-  // }
 
+  // List all stored users with their user IDs and usernames
   List<Map<String, String?>> getAllUsers() {
-  return _authBox.keys
-      .where((key) => key.endsWith('_hashedPassword')) 
-      .map((key) {
-        String userId = key.split('_')[0]; 
-        String? username = _authBox.get('${userId}_username'); 
-        return {'userId': userId, 'username': username};  
-      }).toList();
-}
+    return _authBox.keys
+        .where((key) => key.endsWith('_hashedPassword'))
+        .map((key) {
+          String userId = key.split('_')[0];
+          String? username = _authBox.get('${userId}_username');
+          return {'userId': userId, 'username': username};
+        }).toList();
+  }
 }
