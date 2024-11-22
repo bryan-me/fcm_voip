@@ -83,19 +83,16 @@ bool _isLoading = false;
     }
   }
 
-  // Future<int> createClient() async {
-  //   final tokenEndpoint = Uri.parse(
-  //       'http://192.168.250.209:8070/auth/realms/FCM_VoIP/protocol/openid-connect/token');
-  //   const clientId = 'mobile_client';
-  //   final username = _usernameController.text;
-  //   final password = _passwordController.text;
-
   Future<int> createClient() async {
     final tokenEndpoint = Uri.parse(
-        'http://192.168.250.209:8070/auth/realms/Push/protocol/openid-connect/token');
-    const clientId = 'frontend';
+        'http://192.168.250.209:8070/auth/realms/FCM_VoIP/protocol/openid-connect/token');
+    const clientId = 'mobile_client';
     final username = _usernameController.text;
     final password = _passwordController.text;
+
+    if (username.isEmpty || password.isEmpty) {
+      throw Exception('Username or password cannot be empty');
+    }
 
     try {
       final tokenResponse = await http.post(
@@ -114,20 +111,25 @@ bool _isLoading = false;
         final accessToken = jsonResponse['access_token'];
         final refreshToken = jsonResponse['refresh_token'];
 
-        
+        if (accessToken == null || refreshToken == null) {
+          throw Exception('Access token or refresh token missing from response');
+        }
 
         // Decode the access token to get the user ID (subject claim 'sub')
         Map<String, dynamic> payload = Jwt.parseJwt(accessToken);
-        final userId = payload['sub']; // Extract the user ID
+        final userId = payload['sub'];
         final name = payload['name'];
         final email = payload['email'];
-        
-        print(payload);
+
+        if (userId == null) {
+          throw Exception('User ID is missing in the token payload');
+        }
+
         // Store tokens and user ID securely
         await _authService.storeToken(userId, username, name, email, accessToken, refreshToken);
 
         // Store the hashed password with the user ID
-        await _authService.storeHashedPassword(userId, password);  // Pass password correctly here
+        await _authService.storeHashedPassword(userId, password);
       } else {
         print(
             'Failed to obtain access token. Status code: ${tokenResponse.statusCode}');

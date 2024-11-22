@@ -15,8 +15,13 @@ class AuthService {
     await _authBox.put('${userId}_username', username);
     await _authBox.put('${userId}_name', name);
     await _authBox.put('${userId}_email', email);
-      await setCurrentUserId(userId);
+    // Debug print statements to confirm storage
+    print('Stored access token: $accessToken');
+    print('Stored refresh token: $refreshToken');
+    await setCurrentUserId(userId);
 
+    // Debug print for current user
+    print('Stored current user ID: $userId');
    }
 
 // Get name 
@@ -48,9 +53,17 @@ Future<String?> getEmail(String userId) async {
   // Get token for the specified user and refresh if expired
   Future<String?> getToken(String userId) async {
     String? token = _authBox.get('${userId}_accessToken');
+    if (token == null) {
+      print('Token not found for user $userId');
+    } else {
+      print('Token retrieved for user $userId: $token');
+    }
+
     if (token != null && isTokenExpired(token)) {
       // Refresh the token if it has expired
+      print('Token expired for user $userId. Refreshing...');
       token = await getRefreshToken(userId);
+      print('New token after refresh: $token');
     }
     return token;
   }
@@ -59,9 +72,14 @@ Future<String?> getEmail(String userId) async {
 
   // Check if token is expired
   bool isTokenExpired(String token) {
-    final decodedToken = JwtDecoder.decode(token);
-    final expiryDate = DateTime.fromMillisecondsSinceEpoch(decodedToken['exp'] * 1000);
-    return DateTime.now().isAfter(expiryDate);
+    try {
+      final decodedToken = JwtDecoder.decode(token);
+      final expiryDate = DateTime.fromMillisecondsSinceEpoch(decodedToken['exp'] * 1000);
+      return DateTime.now().isAfter(expiryDate);
+    } catch (e) {
+      print('Error decoding token: $e');
+      return true; // Return true if token decoding fails
+    }
   }
 
   Future<String?> getUsername(String userId) async {
