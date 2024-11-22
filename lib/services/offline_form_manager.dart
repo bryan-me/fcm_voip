@@ -40,4 +40,15 @@ class OfflineFormManager {
       return false; // Submission failed; form remains in queue
     }
   }
+
+  static Future<void> savePendingPayloads(List<Map<String, dynamic>> payload) async {
+    final box = await Hive.openBox('payloadBox');
+    await box.put('pendingPayloads', payload);  // Save as List<Map<String, dynamic>>
+  }
+
+  static Future<List<Map<String, dynamic>>?> getPendingPayloads() async {
+    final box = await Hive.openBox('payloadBox');
+    final payload = box.get('pendingPayloads') as List<Map<String, dynamic>>?;
+    return payload;
+  }
 }

@@ -5,8 +5,13 @@ class AppColors {
   static const Color primaryColor = Color.fromARGB(255, 251, 164, 38);
 
   // Other colors used throughout the app
-  static const Color accentColor = Color(0xFFFFC107); 
+  static const Color accentColor = Color(0xFFFFC107);
+  static const Color titleTextColor = Colors.black;
+  static const Color appBarColor = Colors.blue;
   static const Color backgroundColor = Color.fromARGB(255, 249, 249, 249);
+  // static const Color backgroundColor = Color.fromRGBO(19, 19, 19, 9.0);
+
+
   static const Color buttonColor = Color(0xFFFFC107); 
 
   // Method to create a MaterialColor from a single Color

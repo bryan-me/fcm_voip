@@ -22,24 +22,61 @@ bool _isLoading = false;
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
+  // Future<void> _login() async {
+  //   try {
+  //     // Attempt to create a client and retrieve tokens
+  //     final tokenExchangeStatus = await createClient();
+  //
+  //     if (tokenExchangeStatus == 200) {
+  //       // Navigate to the main screen after successful login
+  //       Navigator.of(context).pushReplacement(
+  //         MaterialPageRoute(builder: (context) => const CustomBottomNavigationBar()),
+  //       );
+  //     } else {
+  //       // Handle failed login attempt
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         const SnackBar(content: Text('Username or Password incorrect. Please try again.')),
+  //       );
+  //     }
+  //   } catch (e) {
+  //     // Display error message in case of an exception
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text('Error: $e')),
+  //     );
+  //   }
+  // }
+
   Future<void> _login() async {
+    setState(() {
+      _isLoading = true; // Show the progress indicator
+    });
+
     try {
       // Attempt to create a client and retrieve tokens
       final tokenExchangeStatus = await createClient();
 
       if (tokenExchangeStatus == 200) {
         // Navigate to the main screen after successful login
+        setState(() {
+          _isLoading = false; // Hide the progress indicator
+        });
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (context) => const CustomBottomNavigationBar()),
         );
       } else {
         // Handle failed login attempt
+        setState(() {
+          _isLoading = false; // Hide the progress indicator
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Username or Password incorrect. Please try again.')),
         );
       }
     } catch (e) {
-      // Display error message in case of an exception
+      // Handle exceptions during login
+      setState(() {
+        _isLoading = false; // Hide the progress indicator
+      });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: $e')),
       );
@@ -157,7 +194,7 @@ Widget build(BuildContext context) {
                   ),
                   const SizedBox(height: 24),
                   const Text(
-                    "Welcome Back!",
+                    "Welcome!",
                     style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,

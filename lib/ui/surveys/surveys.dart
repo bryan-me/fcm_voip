@@ -8,6 +8,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 
+import '../../utilities/filter.dart';
+
 class SurveysScreen extends StatefulWidget {
   const SurveysScreen({super.key});
 
@@ -84,7 +86,9 @@ class _SurveysScreenState extends State<SurveysScreen> {
           actions: [
             IconButton(
               icon: const Icon(Icons.filter_list, color: Colors.black),
-              onPressed: () {},
+              onPressed: () {
+                showFilterBottomSheet(context);
+              },
             ),
           ],
         ),

@@ -6,6 +6,8 @@ import 'package:fcm_voip/ui/login/login.dart';
 import 'package:fcm_voip/utilities/activity_main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
+import '../../utilities/auth_client.dart';
 // import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 // This class, handles the user authentication process in the application. 
@@ -32,6 +34,7 @@ class _AuthScreenState extends State<AuthScreen> {
   String? _errorText;
   List<Map<String, String?>> _users = [];
   int _failedAttempts = 0;
+  final AuthClient _authClient = AuthClient();
   final int _maxAttempts = 3;
 
   bool _isUserSelectionVisible = true;
@@ -115,30 +118,33 @@ class _AuthScreenState extends State<AuthScreen> {
                   const SizedBox(height: 8.0),
                   if (_users.isNotEmpty)
                     ..._users.map((user) => Column(
-                          children: [
-                            ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.grey[850],
-                                minimumSize: const Size(double.infinity, 50),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
+                      children: [
+                        GestureDetector(
+                          onLongPress: () {
+                            _showPopupMenu(user);
+                          },
+                          child: ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.grey[850],
+                              minimumSize: const Size(double.infinity, 50),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
                               ),
-                              icon:
-                                  const Icon(Icons.person, color: Colors.white),
-                              label: Text(
-                                user['username'] ?? 'Unknown User',
-                                style: const TextStyle(color: Colors.white),
-                              ),
-                              onPressed: () {
-                                _selectedUser = user['userId']!;
-                                _promptForPassword();
-                              },
                             ),
-                            const SizedBox(
-                                height: 16.0), // Add space between buttons
-                          ],
-                        )),
+                            icon: const Icon(Icons.person, color: Colors.white),
+                            label: Text(
+                              user['username'] ?? 'Unknown User',
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                            onPressed: () {
+                              _selectedUser = user['userId']!;
+                              _promptForPassword();
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 16.0),
+                      ],
+                    )),
                   const SizedBox(height: 16.0),
                   Divider(color: Colors.grey[700]),
                   const SizedBox(height: 16.0),
@@ -168,123 +174,230 @@ class _AuthScreenState extends State<AuthScreen> {
           );
         },
       ).whenComplete(() {
-        // Reset the visibility flag when the user selection is dismissed
         _isUserSelectionVisible = true;
       });
     }
   }
 
-  void _promptForPassword() {
-  // Close the user selection before showing the password prompt
-  Navigator.pop(context);
-  _isUserSelectionVisible = false; // Set visibility to false
+  // Function to show delete confirmation dialog
+  // void _showDeleteConfirmation(Map<String, dynamic> user) {
+  //   showDialog(
+  //     context: context,
+  //     builder: (context) {
+  //       return AlertDialog(
+  //         title: const Text('Delete User'),
+  //         content: Text('Are you sure you want to delete ${user['username']}?'),
+  //         actions: [
+  //           TextButton(
+  //             onPressed: () {
+  //               Navigator.of(context).pop(); // Dismiss dialog
+  //             },
+  //             child: const Text('Cancel'),
+  //           ),
+  //           TextButton(
+  //             onPressed: () {
+  //               setState(() {
+  //                 _users.remove(user); // Remove user from list
+  //               });
+  //               _clearSession(); // Clear session logic
+  //               Navigator.of(context).pop(); // Dismiss dialog after deletion
+  //             },
+  //             child: const Text('Delete'),
+  //           ),
+  //         ],
+  //       );
+  //     },
+  //   );
+  // }
 
-  showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.black,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(25.0)),
-    ),
-    builder: (context) {
-      return StatefulBuilder(
-        builder: (context, setState) { // Local setState for modal
-          return Padding(
-            padding: EdgeInsets.only(
-              left: 16.0,
-              right: 16.0,
-              bottom: MediaQuery.of(context).viewInsets.bottom + 16.0,
-              top: 24.0,
+  // Show the popup menu with the "Delete" option
+  void _showPopupMenu(Map<String, dynamic> user) {
+    showMenu(
+      context: context,
+      position: RelativeRect.fromLTRB(100.0, 100.0, 0.0, 0.0), // Adjust the position of the menu
+      items: [
+        const PopupMenuItem<String>(
+          value: 'delete',
+          child: Row(
+            children: [
+              Icon(Icons.delete, color: Colors.red),
+              SizedBox(width: 8),
+              Text('Delete User', style: TextStyle(color: Colors.red)),
+            ],
+          ),
+        ),
+      ],
+      elevation: 8.0,
+    ).then((value) {
+      // Check if the user clicked "delete"
+      if (value == 'delete') {
+        _showDeleteConfirmation(user); // Show confirmation dialog if "Delete" was selected
+      }
+    });
+  }
+
+// Function to show delete confirmation dialog
+  void _showDeleteConfirmation(Map<String, dynamic> user) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Delete User'),
+          content: Text('Are you sure you want to delete ${user['username']}?'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Dismiss dialog
+              },
+              child: const Text('Cancel'),
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Image.asset(
-                    'assets/images/fcm_logo.png',
-                    height: 100,
-                    width: 100,
-                  ),
-                const Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                  "Enter your password",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                ),
-                const SizedBox(height: 16.0),
-                TextField(
-                  obscureText: true,
-                  onChanged: (value) {
-                    setState(() {
-                      _password = value;
-                      _errorText = null; // Clear error message when typing
-                    });
-                  },
-                  style: const TextStyle(color: Colors.white),
-                  decoration: InputDecoration(
-                    hintText: "Password",
-                    hintStyle: TextStyle(color: Colors.grey[600]),
-                    filled: true,
-                    fillColor: Colors.grey[850],
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10.0),
-                      borderSide: BorderSide(
-                        color: _errorText != null ? Colors.red : Colors.transparent,
-                      ),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10.0),
-                      borderSide: BorderSide(
-                        color: _errorText != null ? Colors.red : Colors.transparent,
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10.0),
-                      borderSide: BorderSide(
-                        color: _errorText != null ? Colors.red : Colors.blue,
-                      ),
-                    ),
-                  ),
-                ),
-                if (_errorText != null) ...[
-                  const SizedBox(height: 8.0),
-                  Text(
-                    _errorText!,
-                    style: const TextStyle(color: Colors.red),
-                  ),
-                ],
-                const SizedBox(height: 24.0),
-                ElevatedButton(
-                  onPressed: () => _checkPassword(setState),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    minimumSize: const Size(double.infinity, 50),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: const Text(
-                    "Submit",
-                    style: TextStyle(
-                        color: Colors.white, fontWeight: FontWeight.bold),
-                  ),
-                ),
-                const SizedBox(height: 16.0),
-              ],
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  _users.remove(user); // Remove user from list
+                });
+                _clearSession(); // Clear session logic
+                Navigator.of(context).pop(); // Dismiss dialog
+              },
+              child: const Text('Delete'),
             ),
-          );
-        }
-      );
-    },
-  ).whenComplete(() {
-    // Reset the visibility flag when the password prompt is dismissed
-    _isUserSelectionVisible = true;
-  });
-}
+          ],
+        );
+      },
+    );
+  }
+
+  void _clearSession() {
+    _authClient.logout(context);
+    print('Session cleared!');
+  }
+
+
+  void _promptForPassword() {
+    // Close the user selection before showing the password prompt
+    Navigator.pop(context);
+    _isUserSelectionVisible = false; // Set visibility to false
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.black,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(25.0)),
+      ),
+      builder: (context) {
+        return WillPopScope(
+          onWillPop: () async {
+            // Exit the app when the back button is pressed
+            SystemNavigator.pop();
+            return false; // Prevents the modal from being dismissed
+          },
+          child: StatefulBuilder(
+            builder: (context, setState) { // Local setState for modal
+              return Padding(
+                padding: EdgeInsets.only(
+                  left: 16.0,
+                  right: 16.0,
+                  bottom: MediaQuery.of(context).viewInsets.bottom + 16.0,
+                  top: 24.0,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Image.asset(
+                      'assets/images/fcm_logo.png',
+                      height: 100,
+                      width: 100,
+                    ),
+                    const Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        "Enter your password",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16.0),
+                    TextField(
+                      obscureText: true,
+                      onChanged: (value) {
+                        setState(() {
+                          _password = value;
+                          _errorText = null; // Clear error message when typing
+                        });
+                      },
+                      style: const TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
+                        hintText: "Password",
+                        hintStyle: TextStyle(color: Colors.grey[600]),
+                        filled: true,
+                        fillColor: Colors.grey[850],
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10.0),
+                          borderSide: BorderSide(
+                            color: _errorText != null
+                                ? Colors.red
+                                : Colors.transparent,
+                          ),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10.0),
+                          borderSide: BorderSide(
+                            color: _errorText != null
+                                ? Colors.red
+                                : Colors.transparent,
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10.0),
+                          borderSide: BorderSide(
+                            color: _errorText != null
+                                ? Colors.red
+                                : Colors.blue,
+                          ),
+                        ),
+                      ),
+                    ),
+                    if (_errorText != null) ...[
+                      const SizedBox(height: 8.0),
+                      Text(
+                        _errorText!,
+                        style: const TextStyle(color: Colors.red),
+                      ),
+                    ],
+                    const SizedBox(height: 24.0),
+                    ElevatedButton(
+                      onPressed: () => _checkPassword(setState),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        minimumSize: const Size(double.infinity, 50),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text(
+                        "Submit",
+                        style: TextStyle(
+                            color: Colors.white, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    const SizedBox(height: 16.0),
+                  ],
+                ),
+              );
+            },
+          ),
+        );
+      },
+    ).whenComplete(() {
+      // Reset the visibility flag when the password prompt is dismissed
+      _isUserSelectionVisible = true;
+    });
+  }
+
 
   String _hashPassword(String password) {
     return sha256.convert(utf8.encode(password)).toString();

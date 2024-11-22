@@ -55,6 +55,8 @@ Future<String?> getEmail(String userId) async {
     return token;
   }
 
+
+
   // Check if token is expired
   bool isTokenExpired(String token) {
     final decodedToken = JwtDecoder.decode(token);

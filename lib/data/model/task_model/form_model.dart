@@ -1,5 +1,7 @@
 import 'package:hive/hive.dart';
 
+import '../../form_data.dart';
+
 part 'form_model.g.dart';
 
 @HiveType(typeId: 0)
@@ -28,6 +30,9 @@ class FormModel extends HiveObject {
   @HiveField(7)
   String updatedBy;
 
+  // @HiveField(8)
+  bool submitted; // New field to track submission status
+
   FormModel({
     required this.id,
     required this.name,
@@ -37,6 +42,7 @@ class FormModel extends HiveObject {
     required this.createdBy,
     this.updatedAt,
     required this.updatedBy,
+    this.submitted = false,
   });
 
   factory FormModel.fromJson(Map<String, dynamic> json) {
@@ -55,8 +61,10 @@ class FormModel extends HiveObject {
           ? DateTime.parse(json['updatedAt'])
           : null,
       updatedBy: json['updatedBy'] ?? '',
+      // submitted: json['submitted'] ?? false, // Parse submission status
     );
   }
+
 
   get region => null;
 
@@ -78,6 +86,8 @@ class FormModel extends HiveObject {
       'createdBy': createdBy,
       'updatedAt': updatedAt?.toIso8601String(),
       'updatedBy': updatedBy,
+      // 'submitted': submitted, // Include in JSON
+
     };
   }
 }
@@ -143,6 +153,12 @@ class FormDetail extends HiveObject {
     this.updatedAt,
   });
 
+  // Override the toString() method to print the relevant properties
+  @override
+  String toString() {
+    return 'FormDetail{id: $id, index: $index, fieldLabel: $fieldLabel, fieldType: $fieldType, constraints: $constraints, isRequired: $isRequired, defaultValue: $defaultValue, placeholder: $placeholder}';
+  }
+
   factory FormDetail.fromJson(Map<String, dynamic> json) {
     return FormDetail(
       id: json['id'] ?? '',
@@ -185,10 +201,6 @@ class FormDetail extends HiveObject {
       'updatedBy': updatedBy,
       'updatedAt': updatedAt?.toIso8601String(),
     };
-  }
-    @override
-  String toString() {
-    return 'FormDetail{id: $id, index: $index, fieldLabel: $fieldLabel, key: $key, required: $isRequired}';
   }
 }
 
