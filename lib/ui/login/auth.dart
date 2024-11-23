@@ -10,14 +10,14 @@ import 'package:flutter/services.dart';
 import '../../utilities/auth_client.dart';
 // import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-// This class, handles the user authentication process in the application. 
-// It allows users to select their account from a list of stored users in Hive, prompts for 
-// their password, and verifies the password using hashed values. If the authentication 
-// is successful, it navigates to the main application interface. If no users are found, 
-// it redirects to a login screen for new account creation. The class also manages failed 
-// login attempts and provides feedback to the user in case of incorrect password entries.
+/// This class, handles the user authentication process in the application.
+/// It allows users to select their account from a list of stored users in Hive, prompts for
+/// their password, and verifies the password using hashed values. If the authentication
+/// is successful, it navigates to the main application interface. If no users are found,
+/// it redirects to a login screen for new account creation. The class also manages failed
+/// login attempts and provides feedback to the user in case of incorrect password entries.
 //
-// Author: Bryan Danquah
+/// Author: Bryan Danquah
 
 
 class AuthScreen extends StatefulWidget {

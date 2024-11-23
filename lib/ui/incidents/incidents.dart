@@ -550,107 +550,13 @@
 //
 
 
-import 'package:flutter/material.dart';
-import '../../controllers/base_data_controller.dart';
-import '../../data/model/base_data.dart';
-import '../../services/auth_service.dart';
+import 'package:flutter/cupertino.dart';
 
-class IncidentsScreen extends StatefulWidget {
-  @override
-  _IncidentsScreenState createState() => _IncidentsScreenState();
-}
+import '../filtered_screen.dart';
 
-class _IncidentsScreenState extends State<IncidentsScreen> {
-  late Future<List<BaseData>> _baseDataFuture;
-  late BaseDataController _baseDataController;
-  final AuthService _authService = AuthService();
-
-  @override
-  void initState() {
-    super.initState();
-    // Provide the AuthService instance to BaseDataController
-    _baseDataController = BaseDataController(
-      baseUrl: 'http://192.168.250.209:8060/api/v1/activity-service',
-      authService: _authService, // Pass the AuthService here
-    );
-
-    // Provide a default Future to avoid uninitialized access
-    _baseDataFuture = Future.value([]);
-
-    _initializeBaseData();
-  }
-
-  /// Fetch the current user ID and initialize the BaseData fetch
-  Future<void> _initializeBaseData() async {
-    try {
-      final currentUserId = await _authService.getCurrentUserId();
-      final testId = '00ec993d-3810-41ff-8dc6-873005c82923';
-
-      if (currentUserId != null) {
-        setState(() {
-          _baseDataFuture = _baseDataController.fetchBaseData(testId);
-        });
-      } else {
-        // Handle the case where the user ID is not available
-        setState(() {
-          _baseDataFuture = Future.error('No user ID found. Please log in again.');
-        });
-      }
-    } catch (error) {
-      setState(() {
-        _baseDataFuture = Future.error('An error occurred while fetching data: $error');
-      });
-    }
-  }
-
+class IncidentsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Incidents', style: TextStyle(color: Colors.black)),
-        backgroundColor: Colors.white,
-        centerTitle: true,
-        elevation: 0,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: FutureBuilder<List<BaseData>>(
-          future: _baseDataFuture,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            } else if (snapshot.hasError) {
-              String errorMessage = 'An error occurred';
-              if (snapshot.error is Exception) {
-                errorMessage = snapshot.error.toString();
-              }
-              return Center(child: Text(errorMessage));
-            } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-              return const Center(child: Text('No Incidents Found'));
-            }
-
-            // Render data...
-            final baseDataList = snapshot.data!;
-            return ListView.builder(
-              itemCount: baseDataList.length,
-              itemBuilder: (context, index) {
-                final baseData = baseDataList[index];
-                return Card(
-                  margin: const EdgeInsets.symmetric(vertical: 8.0),
-                  child: ListTile(
-                    title: Text(baseData.title),
-                    subtitle: Text('${baseData.client} - ${baseData.taskType}'),
-                    trailing: Text(baseData.dateAssigned.toLocal().toString()),
-                    onTap: () {
-                      // Handle item tap
-                    },
-                  ),
-                );
-              },
-            );
-          },
-        ),
-      ),
-    );
+    return FilteredScreen(type: 'incident');
   }
 }

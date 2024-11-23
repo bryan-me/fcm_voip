@@ -112,9 +112,9 @@ class _CustomBottomNavigationBarState extends State<CustomBottomNavigationBar> {
   int _selectedIndex = 0;
 
   final List<Widget> _screens = [
-    const TasksScreen(),
+     TasksScreen(),
      IncidentsScreen(),
-    const SurveysScreen(),
+     SurveysScreen(),
     SettingsScreen(),
   ];
 
