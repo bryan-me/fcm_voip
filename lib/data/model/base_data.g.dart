@@ -17,28 +17,32 @@ class BaseDataAdapter extends TypeAdapter<BaseData> {
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
     return BaseData(
+      id: fields[0] as String,
       serviceRecordId: fields[1] as int,
       client: fields[2] as String,
-      siteId: fields[3] as int,
-      siteName: fields[4] as String,
-      region: fields[5] as String,
+      siteId: fields[3] as String,
+      siteName: fields[4] as String?,
+      region: fields[5] as String?,
       taskType: fields[6] as String,
       type: fields[7] as String,
-      teamEmail: fields[8] as String,
-      assignedTo: fields[9] as String,
-      project: fields[10] as String,
-      title: fields[11] as String,
-      isCompleted: fields[12] as bool,
-      dateAssigned: fields[13] as String?,
-      dateReceived: fields[14] as String?,
-      dateStarted: fields[15] as String?,
-    )..id = fields[0] as String;
+      technicianId: fields[8] as String,
+      teamEmail: fields[9] as String?,
+      assignedTo: fields[10] as String,
+      project: fields[11] as String,
+      title: fields[12] as String,
+      dateAssigned: fields[13] as DateTime,
+      dateReceived: fields[14] as DateTime?,
+      dateStarted: fields[15] as DateTime?,
+      formId: fields[16] as String,
+      formDetailsId: fields[17] as String?,
+      isFavorited: fields[18] as bool,
+    );
   }
 
   @override
   void write(BinaryWriter writer, BaseData obj) {
     writer
-      ..writeByte(16)
+      ..writeByte(19)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -56,21 +60,27 @@ class BaseDataAdapter extends TypeAdapter<BaseData> {
       ..writeByte(7)
       ..write(obj.type)
       ..writeByte(8)
-      ..write(obj.teamEmail)
+      ..write(obj.technicianId)
       ..writeByte(9)
-      ..write(obj.assignedTo)
+      ..write(obj.teamEmail)
       ..writeByte(10)
-      ..write(obj.project)
+      ..write(obj.assignedTo)
       ..writeByte(11)
-      ..write(obj.title)
+      ..write(obj.project)
       ..writeByte(12)
-      ..write(obj.isCompleted)
+      ..write(obj.title)
       ..writeByte(13)
       ..write(obj.dateAssigned)
       ..writeByte(14)
       ..write(obj.dateReceived)
       ..writeByte(15)
-      ..write(obj.dateStarted);
+      ..write(obj.dateStarted)
+      ..writeByte(16)
+      ..write(obj.formId)
+      ..writeByte(17)
+      ..write(obj.formDetailsId)
+      ..writeByte(18)
+      ..write(obj.isFavorited);
   }
 
   @override

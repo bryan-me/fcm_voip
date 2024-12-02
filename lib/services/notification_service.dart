@@ -1,49 +1,42 @@
-// notification_service.dart
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class NotificationService {
-  static FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+  final FlutterLocalNotificationsPlugin _notificationsPlugin =
+  FlutterLocalNotificationsPlugin();
 
-  // Initialize the local notification plugin
-  Future<void> init() async {
-    const AndroidInitializationSettings androidInitializationSettings =
-    AndroidInitializationSettings('@mipmap/ic_launcher');
-    const InitializationSettings initializationSettings =
-    InitializationSettings(android: androidInitializationSettings);
+  NotificationService() {
+    final androidInitSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
 
-    await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+    // Use DarwinInitializationSettings for iOS/macOS initialization
+    final darwinInitSettings = DarwinInitializationSettings();
+
+    final initializationSettings = InitializationSettings(
+      android: androidInitSettings,
+      iOS: darwinInitSettings,  // Correct parameter name for iOS
+    );
+
+    _notificationsPlugin.initialize(initializationSettings);
   }
 
-  // Show a notification
-  Future<void> showNotification(String message) async {
-    const AndroidNotificationDetails androidNotificationDetails =
-    AndroidNotificationDetails('channel_id', 'channel_name', importance: Importance.high);
-
-    const NotificationDetails notificationDetails =
-    NotificationDetails(android: androidNotificationDetails);
-
-    await flutterLocalNotificationsPlugin.show(0, 'New Notification', message, notificationDetails);
-  }
-
-  // Method to show a notification
-  static Future<void> showSuccessNotification(String title, String body) async {
-    const AndroidNotificationDetails androidPlatformChannelSpecifics =
-    AndroidNotificationDetails(
-      'form_submission_channel', // Channel ID
-      'Form Submission', // Channel name
+  Future<void> showNotification(String title, String body) async {
+    final androidDetails = AndroidNotificationDetails(
+      'channel_id',
+      'channel_name',
+      channelDescription: 'channel_description',
       importance: Importance.high,
       priority: Priority.high,
     );
 
-    const NotificationDetails platformChannelSpecifics =
-    NotificationDetails(android: androidPlatformChannelSpecifics);
+    // Use DarwinNotificationDetails for iOS/macOS
+    final darwinDetails = DarwinNotificationDetails();
 
-    await flutterLocalNotificationsPlugin.show(
-      0, // Notification ID
-      title,
-      body,
-      platformChannelSpecifics,
+    final notificationDetails = NotificationDetails(
+      android: androidDetails,
+      iOS: darwinDetails,  // Correct parameter name for iOS
     );
+
+    await _notificationsPlugin.show(0, title, body, notificationDetails);
   }
 }

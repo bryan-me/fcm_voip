@@ -4,7 +4,7 @@ import '../../form_data.dart';
 
 part 'form_model.g.dart';
 
-@HiveType(typeId: 0)
+@HiveType(typeId: 1)
 class FormModel extends HiveObject {
   @HiveField(0)
   String id;
@@ -92,7 +92,7 @@ class FormModel extends HiveObject {
   }
 }
 
-@HiveType(typeId: 1)
+@HiveType(typeId: 2)
 class FormDetail extends HiveObject {
   @HiveField(0)
   String id;
@@ -204,7 +204,7 @@ class FormDetail extends HiveObject {
   }
 }
 
-@HiveType(typeId: 2)
+@HiveType(typeId: 3)
 class FieldOption extends HiveObject {
   @HiveField(0)
   Map<String, String> options;

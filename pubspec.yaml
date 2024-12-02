@@ -64,6 +64,7 @@ dependencies:
   fluttertoast: ^8.2.8
   get: ^4.6.6
   workmanager: ^0.5.2
+  permission_handler: ^11.3.1
 
 dev_dependencies:
   flutter_test:
@@ -87,11 +88,7 @@ dev_dependencies:
 flutter:
   assets:
     - .env
-    - assets/images/fcm_logo.png
-    - assets/icons/home.png
-    - assets/icons/orders.png
-    - assets/icons/notifications.png
-    - assets/icons/account.png
+    - assets/images/
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
   # the material Icons class.

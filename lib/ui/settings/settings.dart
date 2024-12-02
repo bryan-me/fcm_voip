@@ -437,6 +437,7 @@ import 'package:fcm_voip/services/auth_service.dart';
 import 'package:fcm_voip/utilities/auth_client.dart';
 import 'package:fcm_voip/utilities/resources/values/colors.dart';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 
 import '../../controllers/settings_controller.dart';
@@ -497,8 +498,18 @@ class SettingsScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     mainAxisSize: MainAxisSize.min,
                     children: <Widget>[
-                      const CircleAvatar(
-                        backgroundImage: AssetImage('assets/images/fcm_logo.png'),
+                      // Extract initials from the full name
+                      CircleAvatar(
+                        backgroundColor: Colors.grey[300], // Light gray background
+                        radius: 30, // Adjust the size of the circle
+                        child: Text(
+                          _getInitials(name), // Call the method to get initials
+                          style: TextStyle(
+                            fontSize: 24, // Adjust the font size as needed
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white, // White text color
+                          ),
+                        ),
                       ),
                       Text(
                         name,
@@ -521,7 +532,8 @@ class SettingsScreen extends StatelessWidget {
                     ],
                   ),
                 ),
-              ),
+              )
+,
               const SizedBox(height: 30),
 
               // General Settings Card with GetX state management
@@ -542,6 +554,7 @@ class SettingsScreen extends StatelessWidget {
                           fontWeight: FontWeight.w600,
                         ),
                       ),
+
                       Obx(() {
                         return SwitchListTile(
                           title: const Text("Location Settings"),
@@ -550,12 +563,32 @@ class SettingsScreen extends StatelessWidget {
                             style: TextStyle(fontSize: 12),
                           ),
                           value: _controller.locationSettings.value,
-                          onChanged: (bool value) {
+                          onChanged: (bool value) async {
                             _controller.locationSettings.value = value;
-                            print(controller.emailNotifications.value);
+                            if (value) {
+                              // Request permission to use location
+                              LocationPermission permission = await Geolocator.requestPermission();
+                              if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) {
+                                // Handle permission denial
+                                print('Location permission denied');
+                              } else {
+                                // Enable location services
+                                bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+                                if (!serviceEnabled) {
+                                  // Ask the user to enable location services
+                                  print('Location services are not enabled');
+                                } else {
+                                  print('Location permission granted');
+                                }
+                              }
+                            } else {
+                              // Disable location services or update the setting accordingly
+                              print('Location services disabled');
+                            }
                           },
                         );
                       }),
+
                       const Padding(
                         padding: EdgeInsets.symmetric(horizontal: 16.0),
                         child: Divider(thickness: 0.1),
@@ -642,24 +675,24 @@ class SettingsScreen extends StatelessWidget {
                 ),
               ),
 
-              const SizedBox(height: 30),
-
-              // Logout Button
-              Center(
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red,
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  onPressed: () {
-                    _authClient.logout(context);
-                  },
-                  child: const Text("Log out"),
-                ),
-              ),
+              // const SizedBox(height: 30),
+              //
+              // // Logout Button
+              // Center(
+              //   child: ElevatedButton(
+              //     style: ElevatedButton.styleFrom(
+              //       backgroundColor: Colors.red,
+              //       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              //       shape: RoundedRectangleBorder(
+              //         borderRadius: BorderRadius.circular(8),
+              //       ),
+              //     ),
+              //     onPressed: () {
+              //       _authClient.logout(context);
+              //     },
+              //     child: const Text("Log out"),
+              //   ),
+              // ),
             ],
           );
         },
@@ -790,4 +823,16 @@ class SettingsScreen extends StatelessWidget {
       },
     );
   }
+
+  // Method to get the initials from the full name
+  String _getInitials(String fullName) {
+    List<String> nameParts = fullName.split(' ');
+    if (nameParts.length > 1) {
+      // Return the first letter of the first and last name
+      return '${nameParts[0][0]}${nameParts[nameParts.length - 1][0]}';
+    }
+    // In case there's no last name (single name), return just the first letter
+    return '${nameParts[0][0]}';
+  }
 }
+

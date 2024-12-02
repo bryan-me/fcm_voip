@@ -8,7 +8,7 @@ part of 'form_model.dart';
 
 class FormModelAdapter extends TypeAdapter<FormModel> {
   @override
-  final int typeId = 0;
+  final int typeId = 1;
 
   @override
   FormModel read(BinaryReader reader) {
@@ -63,7 +63,7 @@ class FormModelAdapter extends TypeAdapter<FormModel> {
 
 class FormDetailAdapter extends TypeAdapter<FormDetail> {
   @override
-  final int typeId = 1;
+  final int typeId = 2;
 
   @override
   FormDetail read(BinaryReader reader) {
@@ -136,7 +136,7 @@ class FormDetailAdapter extends TypeAdapter<FormDetail> {
 
 class FieldOptionAdapter extends TypeAdapter<FieldOption> {
   @override
-  final int typeId = 2;
+  final int typeId = 3;
 
   @override
   FieldOption read(BinaryReader reader) {

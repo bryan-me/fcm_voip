@@ -3,10 +3,22 @@ import 'package:fcm_voip/services/auth_service.dart';
 import 'package:fcm_voip/utilities/activity_main.dart';
 // import 'package:fcm_voip/ui/landing_page.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart';
 // import 'package:flutter_keycloak/screens/main_screen.dart';
 // import 'package:flutter_keycloak/service/auth_service.dart';
 import 'package:http/http.dart' as http;
 import 'package:jwt_decode/jwt_decode.dart';
+
+import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:fcm_voip/services/auth_service.dart';
+import 'package:fcm_voip/utilities/activity_main.dart';
+import 'package:http/http.dart' as http;
+import 'package:jwt_decode/jwt_decode.dart';
+import 'package:jwt_decoder/jwt_decoder.dart';
+
+import '../../controllers/base_data_controller.dart';
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -17,46 +29,53 @@ class Login extends StatefulWidget {
 
 class _LoginState extends State<Login> {
   final AuthService _authService = AuthService();
-bool _isLoading = false;
-  // Using TextEditingController for better state management
+  bool _isLoading = false;
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-  // Future<void> _login() async {
-  //   try {
-  //     // Attempt to create a client and retrieve tokens
-  //     final tokenExchangeStatus = await createClient();
-  //
-  //     if (tokenExchangeStatus == 200) {
-  //       // Navigate to the main screen after successful login
-  //       Navigator.of(context).pushReplacement(
-  //         MaterialPageRoute(builder: (context) => const CustomBottomNavigationBar()),
-  //       );
-  //     } else {
-  //       // Handle failed login attempt
-  //       ScaffoldMessenger.of(context).showSnackBar(
-  //         const SnackBar(content: Text('Username or Password incorrect. Please try again.')),
-  //       );
-  //     }
-  //   } catch (e) {
-  //     // Display error message in case of an exception
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(content: Text('Error: $e')),
-  //     );
-  //   }
-  // }
+  // Validation methods
+  String? validateUsername(String username) {
+    final usernameRegex = RegExp(r'^[a-zA-Z0-9._]{1,50}$');
+    if (!usernameRegex.hasMatch(username)) {
+      return 'Username must be alphanumeric, include underscores/periods, and up to 50 characters.';
+    }
+    return null;
+  }
+
+  String? validatePassword(String password) {
+    // Require 8-20 characters, including special characters $@_#
+    final passwordRegex = RegExp(r'^[a-zA-Z0-9@$#_]{8,20}$');
+    if (!passwordRegex.hasMatch(password)) {
+      return 'Password must be 8-20 characters long and include only letters, numbers, and \$@_#.';
+    }
+    return null;
+  }
 
   Future<void> _login() async {
+    final username = _usernameController.text.trim();
+    final password = _passwordController.text;
+
+    final usernameError = validateUsername(username);
+    final passwordError = validatePassword(password);
+
+    if (usernameError != null || passwordError != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+              usernameError ?? passwordError ?? 'Invalid input, please correct it.'),
+        ),
+      );
+      return;
+    }
+
     setState(() {
       _isLoading = true; // Show the progress indicator
     });
 
     try {
-      // Attempt to create a client and retrieve tokens
       final tokenExchangeStatus = await createClient();
 
       if (tokenExchangeStatus == 200) {
-        // Navigate to the main screen after successful login
         setState(() {
           _isLoading = false; // Hide the progress indicator
         });
@@ -64,7 +83,6 @@ bool _isLoading = false;
           MaterialPageRoute(builder: (context) => const CustomBottomNavigationBar()),
         );
       } else {
-        // Handle failed login attempt
         setState(() {
           _isLoading = false; // Hide the progress indicator
         });
@@ -73,7 +91,6 @@ bool _isLoading = false;
         );
       }
     } catch (e) {
-      // Handle exceptions during login
       setState(() {
         _isLoading = false; // Hide the progress indicator
       });
@@ -89,10 +106,6 @@ bool _isLoading = false;
     const clientId = 'mobile_client';
     final username = _usernameController.text;
     final password = _passwordController.text;
-
-    if (username.isEmpty || password.isEmpty) {
-      throw Exception('Username or password cannot be empty');
-    }
 
     try {
       final tokenResponse = await http.post(
@@ -110,12 +123,19 @@ bool _isLoading = false;
         final jsonResponse = json.decode(tokenResponse.body);
         final accessToken = jsonResponse['access_token'];
         final refreshToken = jsonResponse['refresh_token'];
+        final decodedToken = JwtDecoder.decode(accessToken);
+        final sub = decodedToken['sub'];
 
         if (accessToken == null || refreshToken == null) {
           throw Exception('Access token or refresh token missing from response');
         }
 
-        // Decode the access token to get the user ID (subject claim 'sub')
+        print('Access token: $accessToken');
+        print('Session State: $sub');
+        print('Decoded Token: $decodedToken');
+
+
+
         Map<String, dynamic> payload = Jwt.parseJwt(accessToken);
         final userId = payload['sub'];
         final name = payload['name'];
@@ -125,56 +145,31 @@ bool _isLoading = false;
           throw Exception('User ID is missing in the token payload');
         }
 
-        // Store tokens and user ID securely
         await _authService.storeToken(userId, username, name, email, accessToken, refreshToken);
-
-        // Store the hashed password with the user ID
         await _authService.storeHashedPassword(userId, password);
+        // onLoginSuccess();
       } else {
         print(
             'Failed to obtain access token. Status code: ${tokenResponse.statusCode}');
         return tokenResponse.statusCode;
       }
     } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No network connection detected. Please try again later.')),
+      );
       print('Error during token exchange: $e');
-      throw Exception('Failed to obtain access token');
+      throw Exception('Failed to gain access');
     }
 
     return 200;
   }
 
-  Future<void> _forgotPassword() async {
-    if (_usernameController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter your username or email')),
-      );
-      return;
-    }
-
-    final forgotPasswordUrl = Uri.parse(
-        'http://10.0.2.2:8080/realms/Push/login-actions/reset-credentials?client_id=push-messenger&username=${_usernameController.text}');
-
-    try {
-      final response = await http.get(forgotPasswordUrl);
-
-      if (response.statusCode == 200) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Password reset link sent to your email')),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content:
-                  Text('Failed to send reset link: ${response.statusCode}')),
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Error sending reset link')),
-      );
-    }
-  }
+  // void onLoginSuccess() async {
+  //   final currentUser = await _authService.getCurrentUserId();
+  //   final baseDataController = Get.find<BaseDataController>();
+  //   baseDataController.fetchBaseData(currentUser!); // Fetch all required data
+  //   // Get.off(() => HomeScreen()); // Navigate to the main screen
+  // }
 
   @override
 Widget build(BuildContext context) {
