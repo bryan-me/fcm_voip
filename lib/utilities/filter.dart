@@ -12,23 +12,18 @@ class FilterOptionsModal extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Initialize FilterController
     final WebSocketService _webSocketService = WebSocketService('wss://smpp.stlghana.com/connection/websocket');
     final CountController _countController = Get.put(CountController());
-
     final filterController = Get.put(FilterController());
 
-    // Initialize BaseDataController
+    // Passing specific context to BaseDataController
     final baseDataController = Get.put(
       BaseDataController(
         baseUrl: 'http://192.168.250.209:8060/api/v1/activity-service',
         authService: AuthService(),
-        webSocketService: _webSocketService, // Pass WebSocketService here
+        webSocketService: _webSocketService,
       ),
     );
-
-    // Fetch customers dynamically
-    // baseDataController.fetchBaseDataByType("customer");
 
     return Container(
       decoration: BoxDecoration(
@@ -73,9 +68,6 @@ class FilterOptionsModal extends StatelessWidget {
           // Customer Filter
           const SizedBox(height: 16),
           Obx(() {
-            // if (baseDataController.filteredData.isEmpty) {
-            //   return const Center(child: CircularProgressIndicator());
-            // }
             return _buildDropdown(
               context,
               title: "Customer",

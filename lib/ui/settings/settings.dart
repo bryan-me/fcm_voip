@@ -439,6 +439,7 @@ import 'package:fcm_voip/utilities/resources/values/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../controllers/settings_controller.dart';
 
@@ -469,7 +470,12 @@ class SettingsScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
       appBar: AppBar(
-        title: const Text("Settings", style: TextStyle(color: Colors.black)),
+        title: Text("Settings",
+            style: GoogleFonts.poppins(
+              fontWeight: FontWeight.bold,
+            ),
+        ),
+        centerTitle: true,
         backgroundColor: Colors.white,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black),
@@ -504,16 +510,16 @@ class SettingsScreen extends StatelessWidget {
                         radius: 30, // Adjust the size of the circle
                         child: Text(
                           _getInitials(name), // Call the method to get initials
-                          style: TextStyle(
-                            fontSize: 24, // Adjust the font size as needed
+                          style: GoogleFonts.poppins(
                             fontWeight: FontWeight.bold,
-                            color: Colors.white, // White text color
-                          ),
+                            fontSize: 24,
+                            color: Colors.white
+                          )
                         ),
                       ),
                       Text(
                         name,
-                        style: const TextStyle(
+                        style: GoogleFonts.poppins(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
                           color: Colors.black,
@@ -522,7 +528,7 @@ class SettingsScreen extends StatelessWidget {
                       ),
                       Text(
                         email,
-                        style: const TextStyle(
+                        style: GoogleFonts.poppins(
                           fontSize: 14,
                           fontWeight: FontWeight.normal,
                           color: Colors.grey,
@@ -547,9 +553,9 @@ class SettingsScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                       Text(
                         "General Settings",
-                        style: TextStyle(
+                        style: GoogleFonts.poppins(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                         ),
@@ -557,10 +563,10 @@ class SettingsScreen extends StatelessWidget {
 
                       Obx(() {
                         return SwitchListTile(
-                          title: const Text("Location Settings"),
-                          subtitle: const Text(
+                          title: Text("Location Settings", style: GoogleFonts.poppins(),),
+                          subtitle: Text(
                             "Allow apps to use location settings",
-                            style: TextStyle(fontSize: 12),
+                            style: GoogleFonts.poppins(fontSize: 12),
                           ),
                           value: _controller.locationSettings.value,
                           onChanged: (bool value) async {
@@ -595,10 +601,12 @@ class SettingsScreen extends StatelessWidget {
                       ),
                       Obx(() {
                         return SwitchListTile(
-                          title: const Text("Push Notifications"),
-                          subtitle: const Text(
+                          title: Text("Push Notifications",
+                               style: GoogleFonts.poppins()
+                          ),
+                          subtitle: Text(
                             "Receive alerts about push notifications",
-                            style: TextStyle(fontSize: 12),
+                              style: GoogleFonts.poppins(fontSize: 12),
                           ),
                           value: _controller.pushNotifications.value,
                           onChanged: (bool value) {
@@ -612,10 +620,11 @@ class SettingsScreen extends StatelessWidget {
                       ),
                       Obx(() {
                         return SwitchListTile(
-                          title: const Text("Email Notifications"),
-                          subtitle: const Text(
+                          title: Text("Email Notifications",
+                              style: GoogleFonts.poppins()),
+                          subtitle: Text(
                             "Receive updates via email",
-                            style: TextStyle(fontSize: 12),
+                            style: GoogleFonts.poppins(fontSize: 12),
                           ),
                           value: _controller.emailNotifications.value,
                           onChanged: (bool value) {
@@ -641,9 +650,8 @@ class SettingsScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        "Support",
-                        style: TextStyle(
+                       Text(
+                        "Support", style: GoogleFonts.poppins(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                         ),
@@ -773,10 +781,10 @@ class SettingsScreen extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+               style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 16),
-              Text(content, style: TextStyle(fontSize: 14)),
+              Text(content, style: GoogleFonts.poppins(fontSize: 14)),
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: () {
@@ -807,7 +815,7 @@ class SettingsScreen extends StatelessWidget {
 
   Widget _buildSupportItem(String title, BuildContext context) {
     return ListTile(
-      title: Text(title, style: const TextStyle(fontSize: 14)),
+      title: Text(title, style: GoogleFonts.poppins(fontSize: 14)),
       // trailing: const Icon(Icons.arrow_forward_ios, size: 18, color: Colors.grey),
         onTap: () => _showSupportBottomSheet(context, title)
 
@@ -816,7 +824,7 @@ class SettingsScreen extends StatelessWidget {
 
   Widget _buildHelpItem(String title, BuildContext context) {
     return ListTile(
-      title: Text(title, style: const TextStyle(fontSize: 14)),
+      title: Text(title, style: GoogleFonts.poppins(fontSize: 14)),
       trailing: const Icon(Icons.arrow_forward_ios, size: 18, color: Colors.grey),
       onTap: () {
         _anyDeskService.openAnyDesk();

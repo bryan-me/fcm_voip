@@ -264,6 +264,7 @@ import 'package:get/get.dart';
 import 'package:get/get_core/src/get_main.dart';
 
 import '../controllers/count_controller.dart';
+import '../controllers/filter_controller.dart';
 import '../ui/calendar.dart';
 import '../ui/dashboard.dart';
 
@@ -291,50 +292,60 @@ class _CustomBottomNavigationBarState extends State<CustomBottomNavigationBar> {
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
+      // Reset filter state when navigating to a new screen
+      Get.find<FilterController>().clearFilterState();
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _screens[_selectedIndex], // Display selected screen
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 20), // Reduced margin to create a better floating effect
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 25), // Adjust spacing before and after icons
-          decoration: BoxDecoration(
-              color: Colors.black, // Set a semi-transparent background
-              borderRadius: BorderRadius.circular(50),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.2),
-                  blurRadius: 20,
-                  offset: Offset(0, 5),
-                ),
-              ]
+      body: Stack(
+        children: [
+          _screens[_selectedIndex], // Main content screen
+
+          Positioned(
+            bottom: 20, // Distance from the bottom of the screen
+            left: 20,   // Distance from the left of the screen
+            right: 20,  // Distance from the right of the screen
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 25),
+              decoration: BoxDecoration(
+                color: Colors.black,
+                borderRadius: BorderRadius.circular(50),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 20,
+                    offset: Offset(0, 5),
+                  ),
+                ],
+              ),
+              child: BottomNavigationBar(
+                type: BottomNavigationBarType.fixed,
+                currentIndex: _selectedIndex,
+                onTap: _onItemTapped,
+                selectedFontSize: 10,
+                unselectedFontSize: 10,
+                selectedItemColor: Colors.black,
+                unselectedItemColor: Colors.grey,
+                showSelectedLabels: false,
+                showUnselectedLabels: false,
+                backgroundColor: Colors.transparent,
+                items: [
+                  _buildNavItem(Icons.warning_amber_outlined, 0),
+                  _buildNavItem(Icons.construction_outlined, 1),
+                  _buildNavItem(Icons.explore_outlined, 2),
+                  _buildNavItem(Icons.calendar_month, 3),
+                ],
+              ),
+            ),
           ),
-          child: BottomNavigationBar(
-            type: BottomNavigationBarType.fixed,
-            currentIndex: _selectedIndex,
-            onTap: _onItemTapped,
-            selectedFontSize: 10,
-            unselectedFontSize: 10,
-            selectedItemColor: Colors.black,
-            unselectedItemColor: Colors.grey,
-            showSelectedLabels: false,
-            showUnselectedLabels: false,
-            backgroundColor: Colors.transparent, // Ensure the background is transparent
-            items: [
-              _buildNavItem(Icons.warning_amber_outlined, 0),
-              _buildNavItem(Icons.construction_outlined, 1),
-              _buildNavItem(Icons.explore_outlined, 2),
-              _buildNavItem(Icons.calendar_month, 3),
-            ],
-          ),
-        ),
+        ],
       ),
     );
   }
+
 
   ///New
   BottomNavigationBarItem _buildNavItem(IconData icon, int index) {

@@ -122,10 +122,12 @@ class BaseDataController extends GetxController {
   final String baseUrl;
 
   // Observable lists for data
-  final allData = <BaseData>[].obs; // Complete dataset
-  final filteredData = <BaseData>[].obs; // Filtered data by type or conditions
+  RxList<BaseData> allData = <BaseData>[].obs; // Complete dataset
+  // final filteredData = <BaseData>[].obs; // Filtered data by type or conditions
+  RxList<BaseData> filteredData = <BaseData>[].obs;
+
   final typeCounts = <String, int>{}.obs; // Tracks counts for each type
-  var isLoading = true.obs; // Tracks the loading state
+  RxBool isLoading = true.obs; // Tracks the loading state
 
   static const String hiveBoxName = 'forms'; // Hive box name for local storage
   var hiveBoxHelper = HiveBoxHelper();
@@ -210,44 +212,44 @@ class BaseDataController extends GetxController {
 
 
   /// Fetch data for the current technician
-  Future<List<BaseData>> fetchBaseData(String userId) async {
-    final url = Uri.parse('http://192.168.250.209:8060/api/v1/activity-service/mobile/tickets/mobile-data?technicianId=$userId');
-    final accessToken = await authService.getToken(userId);
-print('this is the url: $url');
-    if (accessToken == null) {
-      throw Exception('Access token is missing. Please log in again.');
-    }
-
-    try {
-      final response = await http.get(
-        url,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $accessToken',
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final jsonData = jsonDecode(response.body);
-        if (jsonData['data'] is List) {
-          return (jsonData['data'] as List)
-              .map((item) => BaseData.fromJson(item))
-              .toList();
-        } else {
-          throw Exception('Unexpected data format: "data" field is not a list.');
-        }
-      } else if (response.statusCode == 401) {
-        //             print("Unauthorized (401). Redirecting to login.");
-//             _promptReLogin();
-        throw Exception('Unauthorized: Invalid or expired token. Please log in again.');
-      } else {
-        throw Exception(
-            'Failed to fetch data. Status: ${response.statusCode}, Message: ${response.reasonPhrase}');
-      }
-    } catch (e) {
-      throw Exception('Error fetching base data: $e');
-    }
-  }
+//   Future<List<BaseData>> fetchBaseData(String userId) async {
+//     final url = Uri.parse('http://192.168.250.209:8060/api/v1/activity-service/mobile/tickets/mobile-data?technicianId=$userId');
+//     final accessToken = await authService.getToken(userId);
+// print('this is the url: $url');
+//     if (accessToken == null) {
+//       throw Exception('Access token is missing. Please log in again.');
+//     }
+//
+//     try {
+//       final response = await http.get(
+//         url,
+//         headers: {
+//           'Content-Type': 'application/json',
+//           'Authorization': 'Bearer $accessToken',
+//         },
+//       );
+//
+//       if (response.statusCode == 200) {
+//         final jsonData = jsonDecode(response.body);
+//         if (jsonData['data'] is List) {
+//           return (jsonData['data'] as List)
+//               .map((item) => BaseData.fromJson(item))
+//               .toList();
+//         } else {
+//           throw Exception('Unexpected data format: "data" field is not a list.');
+//         }
+//       } else if (response.statusCode == 401) {
+//         //             print("Unauthorized (401). Redirecting to login.");
+// //             _promptReLogin();
+//         throw Exception('Unauthorized: Invalid or expired token. Please log in again.');
+//       } else {
+//         throw Exception(
+//             'Failed to fetch data. Status: ${response.statusCode}, Message: ${response.reasonPhrase}');
+//       }
+//     } catch (e) {
+//       throw Exception('Error fetching base data: $e');
+//     }
+//   }
 
   /// Fetch data by type (online or offline)
   Future<void> fetchBaseDataByType(String type) async {
@@ -359,109 +361,136 @@ print('this is the url: $url');
   }
 
   /// Apply multiple filters
+  // void applyFilters({
+  //   String? customer,
+  //   String? taskNumber,
+  //   String? status,
+  //   String? severity,
+  // }) {
+  //   filteredData.assignAll(
+  //     allData.where((item) {
+  //       final matchesCustomer = customer == null || item.client == customer;
+  //       final matchesTaskNumber = taskNumber == null || item.siteId == taskNumber;
+  //       final matchesStatus = status == null || item.type == status;
+  //       final matchesSeverity = severity == null || item.type == severity;
+  //       return matchesCustomer && matchesTaskNumber && matchesStatus && matchesSeverity;
+  //     }).toList(),
+  //   );
+  //   print("Filtered data: ${filteredData.length} items match the criteria.");
+  // }
+
   void applyFilters({
     String? customer,
     String? taskNumber,
     String? status,
     String? severity,
   }) {
-    filteredData.assignAll(
-      allData.where((item) {
-        final matchesCustomer = customer == null || item.client == customer;
-        final matchesTaskNumber = taskNumber == null || item.siteId == taskNumber;
-        final matchesStatus = status == null || item.type == status;
-        final matchesSeverity = severity == null || item.type == severity;
-        return matchesCustomer && matchesTaskNumber && matchesStatus && matchesSeverity;
-      }).toList(),
-    );
-    print("Filtered data: ${filteredData.length} items match the criteria.");
+    // Start filtering from the current filtered data
+    var currentData = filteredData.toList();
+
+    if (customer != null && customer.isNotEmpty) {
+      currentData = currentData.where((item) => item.client == customer).toList();
+    }
+    if (taskNumber != null && taskNumber.isNotEmpty) {
+      currentData = currentData.where((item) => item.siteId == taskNumber).toList();
+    }
+    if (status != null && status.isNotEmpty) {
+      currentData = currentData.where((item) => item.type == status).toList();
+    }
+    if (severity != null && severity.isNotEmpty) {
+      currentData = currentData.where((item) => item.type == severity).toList();
+    }
+
+    // Update filteredData with the new subset
+    filteredData.value = currentData;
   }
+
 
 }
 
 
 
-  // Future<List<BaseData>> fetchBaseData(String userId) async {
-  //   // await Future.delayed(const Duration(seconds: 2)); // Simulate network delay
-  //   return [
-  //     BaseData(
-  //       id: '3aefadf4-a398-45df-1c83-d394072363dd',
-  //       title: 'FAB SALTPOND PACKAGING LTD PREMISES',
-  //       client: 'FIRST ATLANTIC BANK',
-  //       taskType: 'SITE SURVEY',
-  //       dateAssigned: DateTime.now(),
-  //       serviceRecordId: 10102,
-  //       siteId: '1234',
-  //       type: 'incident',
-  //       technicianId: '',
-  //       assignedTo: '',
-  //       project: 'first atlantic bank 2020',
-  //       formId: 'bc947ba3-d8b7-46ce-b335-c2f39413e092',
-  //     ),
-  //
-  //     BaseData(
-  //       id: '3aefadf4-a398-45df-4c83-d394072363dd',
-  //       title: 'GHANA GAS PREMISES',
-  //       client: 'FIRST ATLANTIC BANK',
-  //       taskType: 'SITE SURVEY',
-  //       dateAssigned: DateTime.now(),
-  //       serviceRecordId: 10102,
-  //       siteId: '6789',
-  //       type: 'task',
-  //       technicianId: '',
-  //       assignedTo: '',
-  //       project: 'first atlantic bank 2020',
-  //       formId: 'bc947ba3-d8b7-46ce-b335-c2f39413e092',
-  //     ),
-  //
-  //     BaseData(
-  //       id: '3aefadf4-a398-41df-8c83-d394072363dd',
-  //       title: 'MARGIN ID GROUP PREMISES',
-  //       client: 'MARGIN ID GROUP',
-  //       taskType: 'SITE SURVEY',
-  //       dateAssigned: DateTime.now(),
-  //       serviceRecordId: 10102,
-  //       siteId: '6473',
-  //       type: 'Survey',
-  //       technicianId: '',
-  //       assignedTo: '',
-  //       project: 'first atlantic bank 2020',
-  //       formId: 'bc947ba3-d8b7-46ce-b335-c2f39413e092',
-  //     ),
-  //
-  //
-  //
-  //
-  //     BaseData(
-  //       id: '3aefadf4-a398-45df-4c83-d334072363dd',
-  //       title: 'TULLOW OIL PREMISES',
-  //       client: 'TULLOW OIL',
-  //       taskType: 'SITE SURVEY',
-  //       dateAssigned: DateTime.now(),
-  //       serviceRecordId: 10102,
-  //       siteId: '83219',
-  //       type: 'Survey',
-  //       technicianId: '',
-  //       assignedTo: '',
-  //       project: 'first atlantic bank 2020',
-  //       formId: 'bc947ba3-d8b7-46ce-b335-c2f39413e092',
-  //     ),
-  //
-  //     BaseData(
-  //       id: '3aefadf4-a398-44df-8c83-d394072363dd',
-  //       title: 'SUPERTECH LTD PREMISES',
-  //       client: 'CONSOLIDATED BANK GHANA',
-  //       taskType: 'SITE SURVEY',
-  //       dateAssigned: DateTime.now(),
-  //       serviceRecordId: 10102,
-  //       siteId: '5349',
-  //       type: 'Task',
-  //       technicianId: '',
-  //       assignedTo: '',
-  //       project: 'first atlantic bank 2020',
-  //       formId: 'bc947ba3-d8b7-46ce-b335-c2f39413e092',
-  //     ),
-  //   ];
-  // }
+  Future<List<BaseData>> fetchBaseData(String userId) async {
+    // await Future.delayed(const Duration(seconds: 2)); // Simulate network delay
+    return [
+      BaseData(
+        id: '3aefadf4-a398-45df-1c83-d394072363dd',
+        title: 'FAB SALTPOND PACKAGING LTD PREMISES',
+        client: 'FIRST ATLANTIC BANK',
+        taskType: 'SITE SURVEY',
+        dateAssigned: DateTime.now(),
+        serviceRecordId: 10102,
+        siteId: '1234',
+        type: 'incident',
+        technicianId: '',
+        assignedTo: '',
+        project: 'first atlantic bank 2020',
+        formId: 'bc947ba3-d8b7-46ce-b335-c2f39413e092',
+      ),
+
+      BaseData(
+        id: '3aefadf4-a398-45df-4c83-d394072363dd',
+        title: 'GHANA GAS PREMISES',
+        client: 'FIRST ATLANTIC BANK',
+        taskType: 'SITE SURVEY',
+        dateAssigned: DateTime.now(),
+        serviceRecordId: 10102,
+        siteId: '6789',
+        type: 'task',
+        technicianId: '',
+        assignedTo: '',
+        project: 'first atlantic bank 2020',
+        formId: 'bc947ba3-d8b7-46ce-b335-c2f39413e092',
+      ),
+
+      BaseData(
+        id: '3aefadf4-a398-41df-8c83-d394072363dd',
+        title: 'MARGIN ID GROUP PREMISES',
+        client: 'MARGIN ID GROUP',
+        taskType: 'SITE SURVEY',
+        dateAssigned: DateTime.now(),
+        serviceRecordId: 10102,
+        siteId: '6473',
+        type: 'Survey',
+        technicianId: '',
+        assignedTo: '',
+        project: 'first atlantic bank 2020',
+        formId: 'bc947ba3-d8b7-46ce-b335-c2f39413e092',
+      ),
+
+
+
+
+      BaseData(
+        id: '3aefadf4-a398-45df-4c83-d334072363dd',
+        title: 'TULLOW OIL PREMISES',
+        client: 'TULLOW OIL',
+        taskType: 'SITE SURVEY',
+        dateAssigned: DateTime.now(),
+        serviceRecordId: 10102,
+        siteId: '83219',
+        type: 'Survey',
+        technicianId: '',
+        assignedTo: '',
+        project: 'first atlantic bank 2020',
+        formId: 'bc947ba3-d8b7-46ce-b335-c2f39413e092',
+      ),
+
+      BaseData(
+        id: '3aefadf4-a398-44df-8c83-d394072363dd',
+        title: 'SUPERTECH LTD PREMISES',
+        client: 'CONSOLIDATED BANK GHANA',
+        taskType: 'SITE SURVEY',
+        dateAssigned: DateTime.now(),
+        serviceRecordId: 10102,
+        siteId: '5349',
+        type: 'Task',
+        technicianId: '',
+        assignedTo: '',
+        project: 'first atlantic bank 2020',
+        formId: 'bc947ba3-d8b7-46ce-b335-c2f39413e092',
+      ),
+    ];
+  }
 
 

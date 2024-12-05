@@ -75,7 +75,7 @@ class _FormBuildState extends State<FormBuild> {
 
     // _startConnectivityListener();
     // Assuming you know the form ID
-    printFormDataFromHive('3c33daae-e233-48a2-339c-357cab9f5538');
+    // printFormDataFromHive('3c33daae-e233-48a2-339c-357cab9f5538');
   }
 
 
@@ -119,7 +119,52 @@ class _FormBuildState extends State<FormBuild> {
   // }
   // }
 
-  ///New
+  ///fetchFormData New 1
+  // Future<Map<String, dynamic>> fetchFormData(String formId) async {
+  //   String? userId = await authService.getCurrentUserId();
+  //   bool isConnected = await ConnectivityUtil.isConnected();
+  //
+  //   if (userId == null) {
+  //     throw Exception('User not authenticated');
+  //   }
+  //
+  //   final token = await authService.getToken(userId);
+  //   if (token == null) {
+  //     throw Exception('Not authenticated');
+  //   }
+  //
+  //   final String endpoint = '${dotenv.env['FORM_ENDPOINT']}/$formId';
+  //
+  //   final response = await http.get(
+  //     Uri.parse(endpoint),
+  //     headers: {
+  //       'Authorization': 'Bearer $token',
+  //     },
+  //   );
+  //
+  //   if (response.statusCode != 200) {
+  //     throw Exception('Failed to load form data: ${response.statusCode}');
+  //   } else {
+  //     // Parse the response body into a Map<String, dynamic> and return it
+  //     final Map<String, dynamic> responseData = json.decode(response.body);
+  //
+  //     // Assuming 'data' contains the form model data
+  //     var form = FormModel.fromJson(responseData['data']);
+  //
+  //     // Open the Hive box where you want to save the form
+  //     var formBox = await Hive.openBox<FormModel>('formBox');
+  //
+  //     // Save the form to Hive using its id as the key
+  //     await formBox.put(form.id, form);
+  //
+  //     print('Form saved successfully to Hive');
+  //
+  //     // Return the parsed data
+  //     return responseData;
+  //   }
+  // }
+
+  /// fetchFormData New 2
   Future<Map<String, dynamic>> fetchFormData(String formId) async {
     String? userId = await authService.getCurrentUserId();
     bool isConnected = await ConnectivityUtil.isConnected();
@@ -128,6 +173,26 @@ class _FormBuildState extends State<FormBuild> {
       throw Exception('User not authenticated');
     }
 
+    if (!isConnected) {
+      // No internet connection, fetch data from Hive
+      var formBox = await Hive.openBox<FormModel>('formBox');
+      var form = formBox.get(formId);
+
+      if (form == null) {
+        throw Exception('No form data available offline for form ID: $formId');
+      }
+
+      final formData = form.toJson();
+
+      if (formData.isEmpty || !formData.containsKey('formDetails')) {
+        throw Exception('Invalid or incomplete form data for form ID: $formId');
+      }
+
+      print('Fetched form data from Hive: $formData');
+      return formData;
+    }
+
+    // Internet connection is available, fetch data from the remote server
     final token = await authService.getToken(userId);
     if (token == null) {
       throw Exception('Not authenticated');
@@ -145,24 +210,21 @@ class _FormBuildState extends State<FormBuild> {
     if (response.statusCode != 200) {
       throw Exception('Failed to load form data: ${response.statusCode}');
     } else {
-      // Parse the response body into a Map<String, dynamic> and return it
       final Map<String, dynamic> responseData = json.decode(response.body);
 
-      // Assuming 'data' contains the form model data
+      if (!responseData.containsKey('data') || !responseData['data'].containsKey('formDetails')) {
+        throw Exception('Invalid response data from server');
+      }
+
       var form = FormModel.fromJson(responseData['data']);
-
-      // Open the Hive box where you want to save the form
       var formBox = await Hive.openBox<FormModel>('formBox');
-
-      // Save the form to Hive using its id as the key
       await formBox.put(form.id, form);
 
-      print('Form saved successfully to Hive');
-
-      // Return the parsed data
+      print('Form saved to Hive and fetched from server: $responseData');
       return responseData;
     }
   }
+
 
 
   ///Old
@@ -281,7 +343,7 @@ class _FormBuildState extends State<FormBuild> {
 
         // Update the local Hive database
         await formBox.put(form.id, form);
-        print("Form data saved to Hive successfully.");
+        print("Form card data saved to Hive successfully.");
 
         return FormResponse(data: [form], statusCode: 200, message: 'Fetched from server');
       } catch (e) {
@@ -307,23 +369,24 @@ class _FormBuildState extends State<FormBuild> {
     }
   }
 
-  Future<void> printFormDataFromHive(String formId) async {
-    // Open the Hive box
-    var formBox = await Hive.openBox<FormModel>('formBox');
-
-    // Retrieve the form by its id
-    var form = formBox.get(formId);
-
-    // Check if the form is found and print the details
-    if (form != null) {
-      print('Form ID: ${form.id}');
-      print('Form Name: ${form.name}');
-      print('Form Version: ${form.version}');
-      print('Form Details: ${form.formDetails.map((detail) => detail.toString()).join(', ')}');
-    } else {
-      print('Form not found in Hive');
-    }
-  }
+///printForm
+  // Future<void> printFormDataFromHive(String formId) async {
+  //   // Open the Hive box
+  //   var formBox = await Hive.openBox<FormModel>('formBox');
+  //
+  //   // Retrieve the form by its id
+  //   var form = formBox.get(formId);
+  //
+  //   // Check if the form is found and print the details
+  //   if (form != null) {
+  //     print('Form ID: ${form.id}');
+  //     print('Form Name: ${form.name}');
+  //     print('Form Version: ${form.version}');
+  //     print('Form Details: ${form.formDetails.map((detail) => detail.toString()).join(', ')}');
+  //   } else {
+  //     print('Form not found in Hive');
+  //   }
+  // }
 
   // Future<FormData> _fetchHiveForm(String formId) async {
   //   var box = await Hive.openBox<FormModel>('formBox');
@@ -2559,11 +2622,27 @@ class _FormBuildState extends State<FormBuild> {
   Widget buildForm(List<dynamic> formDetails) {
     // Check if formDetails is null or empty, and return an empty form or message
     if (formDetails == null || formDetails.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.all(17),
-        child: Center(child: Text('No form details available.')),
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Image.asset(
+              'assets/images/no_details.gif',
+              width: 150,
+              height: 150,
+              repeat: ImageRepeat.noRepeat, // Stops the animation from repeating
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No form details available.',
+              style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
       );
     }
+
 
     final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
@@ -2954,9 +3033,13 @@ class _FormBuildState extends State<FormBuild> {
                     borderRadius: BorderRadius.circular(12.0),
                   ),
                 ),
-                child: const Text(
+                child: Text(
                   'Submit',
-                  style: TextStyle(fontSize: 16, color: Colors.white),
+                    style:
+                    GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white),
                 ),
               ),
             )
@@ -3080,6 +3163,7 @@ class _FormBuildState extends State<FormBuild> {
     });
   }
 
+  ///Old _retryPendingPayloads
   // void _retryPendingPayloads() async {
   //   // var box = await Hive.openBox('payloadBox');
   //   var hiveBoxHelper = HiveBoxHelper();

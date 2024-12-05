@@ -45,12 +45,13 @@ class FilterController extends GetxController {
     selectedStatus.value = '';
     selectedSeverity.value = '';
 
+    // Reset filters only on current screen data
     Get.find<BaseDataController>().applyFilters(
       customer: null,
       taskNumber: null,
       status: null,
       severity: null,
-    ); // Reset filters
+    ); // Reset filters for current screen
   }
 
   void applyFilters() {
@@ -61,5 +62,10 @@ class FilterController extends GetxController {
       status: selectedStatus.value.isEmpty ? null : selectedStatus.value,
       severity: selectedSeverity.value.isEmpty ? null : selectedSeverity.value,
     );
+  }
+
+  // Reset when navigating to a new screen
+  void clearFilterState() {
+    resetFilters();
   }
 }

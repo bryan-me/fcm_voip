@@ -446,77 +446,83 @@ class _FilteredScreenState extends State<FilteredScreen> {
           ),
         ],
       ),
-      body: Obx(() {
-        if (_baseDataController.isLoading.value) {
-          return const Center(child: CircularProgressIndicator());
-        } else if (_baseDataController.filteredData.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center, // Center content vertically
-              crossAxisAlignment: CrossAxisAlignment.center, // Center content horizontally
-              children: [
-                Image.asset('assets/images/no_data.png', width: 150, height: 150), // Use Image.asset
-                const SizedBox(height: 16), // Add some spacing between the image and text
-                Text(
-                  'No ${widget.type} assigned.',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-              ],
-            ),
-          );
-        } else {
-          return ListView.builder(
-            padding: const EdgeInsets.all(16.0),
-            itemCount: _baseDataController.filteredData.length,
-            itemBuilder: (context, index) {
-              final data = _baseDataController.filteredData[index];
-              return GestureDetector(
-                onTap: () {
-                  // Navigator.push(
-                  //   context,
-                  //   MaterialPageRoute(
-                  //     builder: (context) => FormBuild(formId: data.formId),
-                  //   ),
-                  // );
+      body: RefreshIndicator(onRefresh: _refreshData,
+        child:  Obx(() {
+          if (_baseDataController.isLoading.value) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (_baseDataController.filteredData.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center, // Center content vertically
+                crossAxisAlignment: CrossAxisAlignment.center, // Center content horizontally
+                children: [
+                  Image.asset('assets/images/no_data.png', width: 150, height: 150), // Use Image.asset
+                  const SizedBox(height: 16), // Add some spacing between the image and text
+                  Text(
+                    'No ${widget.type} assigned.',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+            );
+          } else {
+            return
+              Padding(padding: EdgeInsets.only(bottom: 30),
+                  child: ListView.builder(
+                    padding: const EdgeInsets.all(16.0),
+                    itemCount: _baseDataController.filteredData.length,
+                    itemBuilder: (context, index) {
+                      final data = _baseDataController.filteredData[index];
+                      return GestureDetector(
+                        onTap: () {
+                          // Navigator.push(
+                          //   context,
+                          //   MaterialPageRoute(
+                          //     builder: (context) => FormBuild(formId: data.formId),
+                          //   ),
+                          // );
 
-                  Navigator.push(
-                    context,
-                    PageRouteBuilder(
-                      pageBuilder: (context, animation, secondaryAnimation) => FormBuild(formId: data.formId!),
-                      transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                        const begin = Offset(1.0, 0.0);
-                        const end = Offset.zero;
-                        const curve = Curves.easeInOut;
+                          Navigator.push(
+                            context,
+                            PageRouteBuilder(
+                              pageBuilder: (context, animation, secondaryAnimation) => FormBuild(formId: data.formId!),
+                              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                const begin = Offset(1.0, 0.0);
+                                const end = Offset.zero;
+                                const curve = Curves.easeInOut;
 
-                        var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-                        var offsetAnimation = animation.drive(tween);
+                                var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+                                var offsetAnimation = animation.drive(tween);
 
-                        return SlideTransition(position: offsetAnimation, child: child);
-                      },
-                    ),
-                  );
-                },
-                child: NoteCard(
-                  title: data.title ?? 'Title',
-                  region: data.client ?? 'Unknown region',
-                  type: data.type ?? 'Uknown type',
-                  branchName: data.project ?? 'Unknown branch',
-                  customer: data.client ?? 'Unknown customer',
-                  siteId: data.siteId ?? 'N/A',
-                  dateAssigned: data.dateAssigned?.toString() ?? 'N/A',
-                  dateReceived: data.dateReceived?.toString() ?? 'N/A',
-                  color: Colors.black,
-                  icon: Icons.camera_alt_sharp,
-                  isFavorited: _favoriteController.isFavorite(data),
-                  onFavoriteToggle: () => _favoriteController.toggleFavorite(data),
-                  data: data,
-                ),
+                                return SlideTransition(position: offsetAnimation, child: child);
+                              },
+                            ),
+                          );
+                        },
+                        child: NoteCard(
+                          title: data.title ?? 'Title',
+                          region: data.client ?? 'Unknown region',
+                          type: data.type ?? 'Uknown type',
+                          branchName: data.project ?? 'Unknown branch',
+                          customer: data.client ?? 'Unknown customer',
+                          siteId: data.siteId ?? 'N/A',
+                          dateAssigned: data.dateAssigned?.toString() ?? 'N/A',
+                          dateReceived: data.dateReceived?.toString() ?? 'N/A',
+                          color: Colors.black,
+                          icon: Icons.camera_alt_sharp,
+                          isFavorited: _favoriteController.isFavorite(data),
+                          onFavoriteToggle: () => _favoriteController.toggleFavorite(data),
+                          data: data,
+                        ),
+                      );
+                    },
+                  )
               );
-            },
-          );
-        }
-      }),
-    );
+
+          }
+        }),
+        )
+      );
   }
 
   // @override
@@ -711,5 +717,9 @@ class _FilteredScreenState extends State<FilteredScreen> {
     }
     // In case there's no last name (single name), return just the first letter
     return '${nameParts[0][0]}';
+  }
+
+  Future<void> _refreshData() async {
+    await _baseDataController.fetchBaseDataByType(widget.type);
   }
 }

@@ -15,6 +15,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 
 import 'controllers/base_data_controller.dart';
 import 'controllers/count_controller.dart';
+import 'controllers/filter_controller.dart';
 import 'controllers/form_controller.dart';
 import 'data/model/base_data.dart';
 import 'data/model/incident/base_data.dart';
@@ -70,6 +71,7 @@ Future<void> main() async {
 
   Get.put(FormController());
   Get.put(CountController());
+  Get.put(FilterController());
   Get.put(BaseDataController(
     baseUrl: '',
     authService: AuthService(),
